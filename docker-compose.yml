@@ -1,0 +1,14 @@
+version: '3.4'
+
+services:
+  leaderboardwebapi:
+    image: ${DOCKER_REGISTRY-}leaderboardwebapi
+    build:
+      context: .
+      dockerfile: src/LeaderboardWebAPI/Dockerfile
+
+  gamingwebapp:
+    image: ${DOCKER_REGISTRY-}gamingwebapp
+    build:
+      context: .
+      dockerfile: src/GamingWebApp/Dockerfile

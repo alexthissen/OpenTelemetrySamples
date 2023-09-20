@@ -1,0 +1,77 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "SQL Docker Compose Up",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "Invoke-Expression",
+            "args": ["'docker-compose -f docker-compose.sqlonly.yml up -d --build'"],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "SQL Docker Compose Down",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "Invoke-Expression",
+            "args": ["'docker-compose -f docker-compose.sqlonly.yml down'"],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            // Use IntelliSense to find out which attributes exist for C# debugging
+            // Use hover for the description of the existing attributes
+            // For further information visit https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md
+            "name": "Gaming WebApp",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/src/GamingWebApp/bin/Debug/net5.0/GamingWebApp.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/GamingWebApp",
+            "stopAtEntry": false,
+            // Enable launching a web browser when ASP.NET Core starts. For more information: https://aka.ms/VSCode-CS-LaunchJson-WebBrowser
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "\\\\bNow listening on:\\\\s+(https?://\\\\S+)"
+            },
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            },
+            "sourceFileMap": {
+                "/Views": "${workspaceFolder}/Views"
+            }
+        },
+        {
+            // Use IntelliSense to find out which attributes exist for C# debugging
+            // Use hover for the description of the existing attributes
+            // For further information visit https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md
+            "name": "Leaderboard WebAPI",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/src/LeaderboardWebAPI/bin/Debug/net5.0/LeaderboardWebAPI.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/LeaderboardWebAPI",
+            "stopAtEntry": false,
+            // Enable launching a web browser when ASP.NET Core starts. For more information: https://aka.ms/VSCode-CS-LaunchJson-WebBrowser
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "\\\\bNow listening on:\\\\s+(https?://\\\\S+)"
+            },
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            },
+            "sourceFileMap": {
+                "/Views": "${workspaceFolder}/Views"
+            }
+        },
+        {
+            "name": ".NET Core Attach",
+            "type": "coreclr",
+            "request": "attach",
+            "processId": "${command:pickProcess}"
+        }
+    ]
+}
