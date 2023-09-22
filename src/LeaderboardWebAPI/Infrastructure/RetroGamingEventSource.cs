@@ -32,6 +32,7 @@ namespace LeaderboardWebAPI.Infrastructure
         public void NewHighScore(int points)
         { 
             WriteEvent(1, points);
+            
             NewHighScoreEventCounter.WriteMetric(points);
         }
     }

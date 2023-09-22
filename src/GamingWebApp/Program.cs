@@ -1,10 +1,8 @@
-using Azure.Monitor.OpenTelemetry.AspNetCore;
-using Azure.Monitor.OpenTelemetry.Exporter;
 using GamingWebApp;
 using GamingWebApp.Proxy;
 using Microsoft.Extensions.Telemetry.Enrichment;
-using Microsoft.Extensions.Telemetry.Metering;
 using OpenTelemetry.Exporter;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -12,7 +10,6 @@ using Polly;
 using Polly.Extensions.Http;
 using Polly.Timeout;
 using Refit;
-using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,6 +40,12 @@ builder.Services.AddHttpClient("WebAPIs", options =>
 .AddPolicyHandler(retry.WrapAsync(timeout))
 .AddTypedClient(RestService.For<ILeaderboardClient>);
 
+builder.Logging.AddOpenTelemetry(builder =>
+{
+    builder.AddConsoleExporter();
+    builder.AddOtlpExporter();
+});
+
 builder.Services.AddHsts(
     options =>
     {
@@ -65,12 +68,13 @@ builder.Services
         //.ConfigureResource(builder => builder.AddService("otel-worker-service"))
         .WithMetrics(provider => provider
             .AddMeter("Techorama.Metrics")
-            //.AddPrometheusExporter()
             .AddConsoleExporter()
-            .AddAzureMonitorMetricExporter(options =>
-            {
-                options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
-            }))
+            .AddOtlpExporter()
+            // .AddAzureMonitorMetricExporter(options =>
+            // {
+            //     options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
+            // })
+                     )
         .WithTracing(provider =>
         {
             //builder.SetErrorStatusOnException(true);
@@ -85,12 +89,14 @@ builder.Services
             provider.AddAspNetCoreInstrumentation();
             provider.SetResourceBuilder(resourceBuilder);
             provider.AddConsoleExporter(options => options.Targets = ConsoleExporterOutputTargets.Console);
-            //builder.AddZipkinExporter();
-            //builder.AddOtlpExporter();
-            provider.AddAzureMonitorTraceExporter(options =>
-            {
-                options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
-            });
+            provider.AddOtlpExporter();
+            //provider.AddZipkinExporter();
+           
+            // provider.AddAzureMonitorTraceExporter(options =>
+            // {
+            //     options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
+            // });
+            
         });
 
 

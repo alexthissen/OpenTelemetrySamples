@@ -12,3 +12,62 @@ services:
     build:
       context: .
       dockerfile: src/GamingWebApp/Dockerfile
+      
+  seq:
+    image: datalust/seq:latest
+    ports:
+      - "5341:80"
+    environment:
+      ACCEPT_EULA: Y
+      SEQ_LICENSE: trial
+    
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    volumes:
+      - ./config/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    command: [ "--config=/etc/otel-collector-config.yaml" ]
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "13133:13133"
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686" # Port for User Interface
+      - "4317:4317" # Port for gRPC
+      - "4318:4318"
+      - "14268:14268"
+#  loki:
+#    image: grafana/loki:latest
+#    ports:
+#      - "3100:3100"
+#      - "9096:9096"
+#    command: -config.file=/config/loki-config.yaml
+#    volumes:
+#      - ./config/loki-config.yaml:/config/loki-config.yaml
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./config/prometheus-config.yaml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090" # Port for User Interface
+
+  zipkin:
+    image: openzipkin/zipkin:latest
+    ports:
+      - "9411:9411" # Port for User Interface
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000" # Port for User Interface
+    volumes:
+      - grafana_data:/var/lib/grafana
+      
+      
+volumes:
+  grafana_data: { }

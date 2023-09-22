@@ -5,7 +5,6 @@ using Azure.Security.KeyVault.Secrets;
 using LeaderboardWebApi.Infrastructure;
 using LeaderboardWebAPI.Infrastructure;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -26,7 +25,9 @@ using OpenTelemetry.Trace;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.Contracts;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Exporter;
+using OpenTelemetry.Metrics;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -45,6 +46,11 @@ Activity.DefaultIdFormat = ActivityIdFormat.W3C;
 
 builder.Services.RegisterMetering();
 builder.Services.AddMetrics();
+builder.Logging.AddOpenTelemetry(loggerOptions =>
+{
+    loggerOptions.AddConsoleExporter();
+    loggerOptions.AddOtlpExporter();
+});
 
 builder.Services.AddServiceLogEnricher(options =>
 {
@@ -72,13 +78,18 @@ builder.Services
             
             // Exporters
             provider.AddConsoleExporter(options => options.Targets = ConsoleExporterOutputTargets.Console);
-            //builder.AddZipkinExporter();
-            //builder.AddOtlpExporter();
-            provider.AddAzureMonitorTraceExporter(options =>
-            {
-                options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
-            });
-        });
+            //provider.AddZipkinExporter();
+            provider.AddOtlpExporter();
+            // provider.AddAzureMonitorTraceExporter(options =>
+            // {
+            //     options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
+            // });
+        })
+   .WithMetrics(metrics =>
+    {
+        metrics.AddOtlpExporter();
+        metrics.AddConsoleExporter();
+    });
 
 // Read Azure Key Vault client details from mounted secret in Kubernetes
 builder.Configuration.AddJsonFile("secrets/appsettings.secrets.json", optional: true);
@@ -126,7 +137,7 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 //healthChecks?.AddDbContextCheck<LeaderboardContext>("database", tags: new[] { "ready" });
 
 // Add log providers
-builder.Logging.AddSeq("http://seq:5341");
+// builder.Logging.AddSeq("http://seq:5341");
 builder.Logging.AddSimpleConsole(options => {
     // New since .NET 5
     options.ColorBehavior = LoggerColorBehavior.Disabled;

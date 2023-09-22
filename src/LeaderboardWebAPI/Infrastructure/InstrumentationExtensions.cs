@@ -1,6 +1,4 @@
 ﻿using HealthChecks.UI.Client;
-using LeaderboardWebAPI.Infrastructure;
-using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;

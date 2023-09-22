@@ -6,7 +6,8 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=https://+:443;http://+:80;http://+:8080
       - ASPNETCORE_MANAGEMENTPORT=8080
-      - ConnectionStrings__LeaderboardContext=Server=sql.retrogaming.internal;Database=Leaderboard;User Id=sa;Password=Pass@word;Trusted_Connection=False;TrustServerCertificate=true
+      - KESTREL__CERTIFICATES__DEFAULT__PATH=/https/aspnetapp.pfx
+      - ConnectionStrings__LeaderboardContext=Server=sql.retrogasming.internal;Database=Leaderboard;User Id=sa;Password=Pass@word;Trusted_Connection=False;TrustServerCertificate=true
       #- KeyVaultUri=https://conferencedemoskeyvault.vault.azure.net/
     ports:
       - "4972:80"
@@ -14,7 +15,8 @@ services:
     depends_on:
       - sql.data
     volumes:
-      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
+       - ${HOME}/.aspnet/dev-certs/https:/.aspnet/dev-certs/
+#      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
     networks:
       - frontend
       - backend
@@ -30,7 +32,8 @@ services:
     depends_on:
       - leaderboardwebapi
     volumes:
-      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
+      -  ${HOME}/.aspnet/https:/https/
+#      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
     networks:
       - frontend
 
