@@ -1,6 +1,4 @@
-﻿using System;
-using System.Diagnostics.Tracing;
-using static Microsoft.Extensions.Logging.EventSource.LoggingEventSource;
+﻿using System.Diagnostics.Tracing;
 
 namespace LeaderboardWebAPI.Infrastructure
 {

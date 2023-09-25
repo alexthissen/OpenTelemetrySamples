@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -45,6 +46,17 @@ namespace LeaderboardWebAPI.Controllers
             logger?.LogWarning("Retrieving score list with a limit of {SearchLimit}.", limit);
             logger?.LogInformation("Retrieving score list with a limit of {SearchLimit}.", limit);
 
+            //using (var span = Activity.Current?.Source.StartActivity(
+            //    ActivityKind.Internal, 
+            //    links: new List<ActivityLink>() { new ActivityLink(new ActivityContext()) }))
+            //{
+            //    AnalyzeLimit(limit);
+
+            //    Activity.Current?.AddEvent(new ActivityEvent("Analysis Completed",
+            //        tags: new ActivityTagsCollection(
+            //            new List<KeyValuePair<string, object>>() { new("limit", limit) })));
+
+            //}
             AnalyzeLimit(limit);
 
             var scores = context.Scores
@@ -54,6 +66,10 @@ namespace LeaderboardWebAPI.Controllers
                     Points = score.Points,
                     Nickname = score.Gamer.Nickname
                 }).Take(limit);
+
+            Activity.Current?.AddEvent(new ActivityEvent("Prepared LINQ statement", 
+                tags: new ActivityTagsCollection(
+                    new List<KeyValuePair<string, object>>() { new("Test", 123) } )));
 
             return Ok(await scores.ToListAsync().ConfigureAwait(false));
         }

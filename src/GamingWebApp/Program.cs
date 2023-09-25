@@ -6,6 +6,7 @@ using Microsoft.Extensions.Telemetry.Enrichment;
 using Microsoft.Extensions.Telemetry.Metering;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
+using OpenTelemetry.ResourceDetectors.Container;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Polly;
@@ -28,7 +29,8 @@ var timeout = Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromMilliseconds
 var retry = HttpPolicyExtensions
     .HandleTransientHttpError()
     .Or<TimeoutRejectedException>()
-    .RetryAsync(3, onRetry: (exception, retryCount) => {
+    .RetryAsync(3, onRetry: (exception, retryCount) =>
+    {
         // TODO: Change to new trace event
         // Trace.TraceInformation($"Retry #{retryCount}");
         //Activity.Current.RecordException(exception, new TagList().Add("Retry count", retryCount));
@@ -58,7 +60,8 @@ var resourceBuilder = ResourceBuilder.CreateDefault().AddService("gaming-web-app
         new("service.namespace", "techorama"),
         new("service.instance.id", "gamingwebapp"),
         new("region", "west-europe")
-    });
+    })
+    .AddDetector(new ContainerResourceDetector());
 
 builder.Services
     .AddOpenTelemetry()
@@ -66,7 +69,7 @@ builder.Services
         .WithMetrics(provider => provider
             .AddMeter("Techorama.Metrics")
             //.AddPrometheusExporter()
-            .AddConsoleExporter()
+            .AddOtlpExporter(options => options.Endpoint = new Uri("http://jaeger:4317"))
             .AddAzureMonitorMetricExporter(options =>
             {
                 options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
@@ -75,7 +78,8 @@ builder.Services
         {
             //builder.SetErrorStatusOnException(true);
             provider.AddSource("GamingWebApp");
-            provider.AddServiceTraceEnricher(options => {
+            provider.AddServiceTraceEnricher(options =>
+            {
                 options.ApplicationName = true;
                 options.EnvironmentName = true;
                 options.BuildVersion = true;
@@ -85,8 +89,8 @@ builder.Services
             provider.AddAspNetCoreInstrumentation();
             provider.SetResourceBuilder(resourceBuilder);
             provider.AddConsoleExporter(options => options.Targets = ConsoleExporterOutputTargets.Console);
-            //builder.AddZipkinExporter();
-            //builder.AddOtlpExporter();
+            provider.AddZipkinExporter(options => options.Endpoint = new Uri("http://zipkin:9411/api/v2/spans"));
+            provider.AddOtlpExporter(options => options.Endpoint = new Uri("http://jaeger:4317"));
             provider.AddAzureMonitorTraceExporter(options =>
             {
                 options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];

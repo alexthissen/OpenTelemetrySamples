@@ -2,6 +2,7 @@ version: '3.4'
 
 services:
   leaderboardwebapi:
+    container_name: webapi
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=https://+:443;http://+:80;http://+:8080
@@ -20,7 +21,9 @@ services:
       - backend
 
   gamingwebapp:
+    container_name: webapp
     environment:
+      - OTEL_DOTNET_AUTO_CONTAINER_RESOURCE_DETECTOR_ENABLED=true
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=https://+:443;http://+:80
       - LeaderboardApiOptions__BaseUrl=http://leaderboardwebapi
@@ -35,6 +38,7 @@ services:
       - frontend
 
   sql.data:
+    container_name: sql
     image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
       - SA_PASSWORD=Pass@word
@@ -49,6 +53,7 @@ services:
 
   seq:
     image: datalust/seq:latest
+    container_name: seq
     environment: 
       - ACCEPT_EULA=Y
     ports:
@@ -67,6 +72,30 @@ services:
   #     - 5000:80
   #   networks:
   #     - backend
+
+  zipkin:
+    image: ghcr.io/openzipkin/zipkin:latest
+    container_name: zipkin
+    ports:
+      - 9411:9411
+    networks:
+      - frontend
+      - backend
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true 
+    ports:
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - 16686:16686 
+      - 4317:4317 
+      - 4318:4318 
+    networks:
+      - frontend
+      - backend
 
   dotnet-monitor:
     image: mcr.microsoft.com/dotnet/monitor:7

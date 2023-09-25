@@ -31,12 +31,12 @@ using System.Diagnostics.Contracts;
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 var resourceBuilder = ResourceBuilder.CreateDefault()
-    .AddService("leaderboard-web-api-service2")
+    .AddService("leaderboard-web-api-service")
     .AddAttributes(new List<KeyValuePair<string, object>>() {
         new("app-version", "1.0"),
-        new("service.name", "leaderboard-web-api2"),
+        new("service.name", "leaderboard-web-api"),
         new("service.namespace", "techorama"),
-        new("service.instance.id", "leaderboardwebapi2"),
+        new("service.instance.id", "leaderboardwebapi"),
         new("region", "west-europe")
     });
 
@@ -65,15 +65,15 @@ builder.Services
                 options.EnvironmentName = true;
                 options.BuildVersion = true;
                 options.DeploymentRing = true;
-            });
+            }); 
             provider.AddAspNetCoreInstrumentation();
             provider.AddEntityFrameworkCoreInstrumentation();
             provider.SetResourceBuilder(resourceBuilder);
             
             // Exporters
             provider.AddConsoleExporter(options => options.Targets = ConsoleExporterOutputTargets.Console);
-            //builder.AddZipkinExporter();
-            //builder.AddOtlpExporter();
+            provider.AddZipkinExporter(options => options.Endpoint = new Uri("http://zipkin:9411/api/v2/spans"));
+            provider.AddOtlpExporter(options => options.Endpoint = new Uri("http://jaeger:4317"));
             provider.AddAzureMonitorTraceExporter(options =>
             {
                 options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
