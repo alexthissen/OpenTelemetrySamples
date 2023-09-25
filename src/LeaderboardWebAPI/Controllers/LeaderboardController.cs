@@ -1,10 +1,14 @@
-﻿using LeaderboardWebAPI.Infrastructure;
+﻿using System;
+using LeaderboardWebAPI.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using LeaderboardWebAPI.Metrics;
+using OpenTelemetry.Trace;
 
 namespace LeaderboardWebAPI.Controllers
 {
@@ -22,12 +26,12 @@ namespace LeaderboardWebAPI.Controllers
     {
         public LeaderboardContext context { get; }
 
-        private readonly ILogger<LeaderboardController> logger;
+        private readonly ILogger<LeaderboardController> _logger;
 
-        public LeaderboardController(LeaderboardContext context, ILoggerFactory loggerFactory)
+        public LeaderboardController(LeaderboardContext context, ILogger<LeaderboardController> logger)
         {
             this.context = context;
-            this.logger = loggerFactory.CreateLogger<LeaderboardController>();
+            _logger = logger;
         }
 
         // GET api/leaderboard
@@ -40,21 +44,35 @@ namespace LeaderboardWebAPI.Controllers
         [ProducesResponseType(typeof(IEnumerable<HighScore>), 200)]
         public async Task<ActionResult<IEnumerable<HighScore>>> Get(int limit = 10)
         {
-            logger?.LogError("Retrieving score list with a limit of {SearchLimit}.", limit);
-            logger?.LogWarning("Retrieving score list with a limit of {SearchLimit}.", limit);
-            logger?.LogInformation("Retrieving score list with a limit of {SearchLimit}.", limit);
+            using var activity = Diagnostics.LeaderboardActivitySource.StartActivity("GetHighScore");
+            activity?.SetTag("leaderboard.limit", limit);
+            _logger?.LogInformation("Retrieving score list with a limit of {SearchLimit}.", limit);
 
             AnalyzeLimit(limit);
 
-            var scores = context.Scores
-                .Select(score => new HighScore()
-                {
-                    Game = score.Game,
-                    Points = score.Points,
-                    Nickname = score.Gamer.Nickname
-                }).Take(limit);
-
-            return Ok(await scores.ToListAsync().ConfigureAwait(false));
+            try
+            {
+                var scores = context.Scores
+                   .Select(score => new HighScore()
+                    {
+                        Game = score.Game,
+                        Points = score.Points,
+                        Nickname = score.Gamer.Nickname
+                    }).Take(limit);
+                
+                LeaderboardMeter.ScoreRetrieved();
+                // activity?.Stop();
+                return Ok(await scores.ToListAsync().ConfigureAwait(false));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, ex.Message);
+                LeaderboardMeter.ExceptionOccured();
+                activity?.RecordException(ex);
+                activity?.SetStatus(ActivityStatusCode.Error);
+            }
+            
+            return BadRequest();
         }
 
         private void AnalyzeLimit(int limit)

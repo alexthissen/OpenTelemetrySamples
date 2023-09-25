@@ -1,6 +1,5 @@
 using Azure.Extensions.AspNetCore.Configuration.Secrets;
 using Azure.Identity;
-using Azure.Monitor.OpenTelemetry.Exporter;
 using Azure.Security.KeyVault.Secrets;
 using LeaderboardWebApi.Infrastructure;
 using LeaderboardWebAPI.Infrastructure;
@@ -25,8 +24,8 @@ using OpenTelemetry.Trace;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using LeaderboardWebAPI.Metrics;
 using OpenTelemetry.Logs;
-using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -39,18 +38,24 @@ var resourceBuilder = ResourceBuilder.CreateDefault()
         new("service.namespace", "techorama"),
         new("service.instance.id", "leaderboardwebapi2"),
         new("region", "west-europe")
-    });
+    })
+   .AddTelemetrySdk();
 
 builder.Host.UseApplicationMetadata("AmbientMetadata:Application");
 Activity.DefaultIdFormat = ActivityIdFormat.W3C;
 
 builder.Services.RegisterMetering();
 builder.Services.AddMetrics();
-builder.Logging.AddOpenTelemetry(loggerOptions =>
+
+builder.Services.AddLogging(logging => logging.AddOpenTelemetry(openTelemetryLoggerOptions =>
 {
-    loggerOptions.AddConsoleExporter();
-    loggerOptions.AddOtlpExporter();
-});
+    openTelemetryLoggerOptions.SetResourceBuilder(resourceBuilder);
+    // Some important options to improve data quality
+    openTelemetryLoggerOptions.IncludeScopes = true;
+    openTelemetryLoggerOptions.IncludeFormattedMessage = true;
+    openTelemetryLoggerOptions.AddOtlpExporter();
+}));
+
 
 builder.Services.AddServiceLogEnricher(options =>
 {
@@ -60,11 +65,15 @@ builder.Services.AddServiceLogEnricher(options =>
     options.DeploymentRing = true;
 });
 
+builder.Services.AddSingleton(new LeaderboardMeter());
+builder.Services.AddSingleton(new ScoreMeter());
+
 builder.Services
     .AddOpenTelemetry()
         .WithTracing(provider =>
         {
-            provider.AddSource("LeaderboardWebAPI");
+            provider.AddSource(Diagnostics.LeaderboardActivitySource.Name);
+            provider.SetResourceBuilder(resourceBuilder);
             provider.AddServiceTraceEnricher(options =>
             {
                 options.ApplicationName = true;
@@ -73,13 +82,16 @@ builder.Services
                 options.DeploymentRing = true;
             });
             provider.AddAspNetCoreInstrumentation();
-            provider.AddEntityFrameworkCoreInstrumentation();
-            provider.SetResourceBuilder(resourceBuilder);
-            
+            provider.AddHttpClientInstrumentation();
+            provider.AddEntityFrameworkCoreInstrumentation(options =>
+            {
+                options.SetDbStatementForText = true;
+            } );
+           
             // Exporters
             provider.AddConsoleExporter(options => options.Targets = ConsoleExporterOutputTargets.Console);
-            //provider.AddZipkinExporter();
             provider.AddOtlpExporter();
+            
             // provider.AddAzureMonitorTraceExporter(options =>
             // {
             //     options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
@@ -87,6 +99,7 @@ builder.Services
         })
    .WithMetrics(metrics =>
     {
+        metrics.AddMeter(LeaderboardMeter.MeterName, ScoreMeter.MeterName);
         metrics.AddOtlpExporter();
         metrics.AddConsoleExporter();
     });
@@ -138,6 +151,8 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 // Add log providers
 // builder.Logging.AddSeq("http://seq:5341");
+
+
 builder.Logging.AddSimpleConsole(options => {
     // New since .NET 5
     options.ColorBehavior = LoggerColorBehavior.Disabled;
@@ -155,7 +170,7 @@ builder.Services
     .AddNewtonsoftJson(setup => {
         setup.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
     })
-    .AddXmlSerializerFormatters()
+   .AddXmlSerializerFormatters()
     .AddControllersAsServices(); // For resolving controllers as services via DI
 
 // Instrumentation
@@ -170,10 +185,12 @@ builder.Services.AddCors(options =>
     );
 });
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1.0", new OpenApiInfo { Title = "Retro Videogames Leaderboard WebAPI", Version = "v1.0" });
 });
+
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
     options.InvalidModelStateResponseFactory = context =>

@@ -7,12 +7,14 @@ receivers:
 exporters:
   logging:
     loglevel: debug
-  otlp/jaeger: # Jaeger otlp collector
+    
+  otlp/jaeger:
     endpoint: jaeger:4317
     tls:
       insecure: true
+      
   otlphttp/seq:
-    endpoint: http://seq:5341/ingest/otlp
+    endpoint: http://seq:5341/ingest/otlp/
     
 #  azuremonitor:
 #    instrumentation_key: 71538274-919e-44cf-b0d8-3dadd78dcfd0
@@ -20,7 +22,8 @@ exporters:
   
   prometheus:
     endpoint: 0.0.0.0:8889
-  zipkin:
+  
+  zipkin: 
     endpoint: http://zipkin:9411/api/v2/spans
 
 extensions:
@@ -43,7 +46,7 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [logging, otlp/jaeger, zipkin]
+      exporters: [logging, zipkin, otlp/jaeger]
       processors: [batch]
     metrics:
       receivers: [otlp]

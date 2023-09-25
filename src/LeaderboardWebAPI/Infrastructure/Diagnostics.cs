@@ -4,6 +4,6 @@ namespace LeaderboardWebAPI.Infrastructure
 {
     public class Diagnostics
     {
-        public static ActivitySource ActivitySource = new ActivitySource("RetroGaming-API");
+        public static readonly ActivitySource LeaderboardActivitySource = new("Leaderboard-API");
     }
 }

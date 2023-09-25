@@ -13,13 +13,13 @@ services:
       context: .
       dockerfile: src/GamingWebApp/Dockerfile
       
-  seq:
-    image: datalust/seq:latest
-    ports:
-      - "5341:80"
-    environment:
-      ACCEPT_EULA: Y
-      SEQ_LICENSE: trial
+#  seq:
+#    image: datalust/seq:latest
+#    ports:
+#      - "5341:80"
+#    environment:
+#      ACCEPT_EULA: Y
+#      SEQ_LICENSE: trial
     
   otel-collector:
     image: otel/opentelemetry-collector-contrib:latest
@@ -37,8 +37,8 @@ services:
       - COLLECTOR_OTLP_ENABLED=true
     ports:
       - "16686:16686" # Port for User Interface
-      - "4317:4317" # Port for gRPC
-      - "4318:4318"
+#      - "4317:4317" # Port for gRPC
+#      - "4318:4318"
       - "14268:14268"
 #  loki:
 #    image: grafana/loki:latest
@@ -67,7 +67,13 @@ services:
       - "3000:3000" # Port for User Interface
     volumes:
       - grafana_data:/var/lib/grafana
-      
-      
+  
+  seq:
+    image: datalust/seq:latest
+    environment:
+      - ACCEPT_EULA=Y
+    ports:
+      - 5348:80
+
 volumes:
   grafana_data: { }

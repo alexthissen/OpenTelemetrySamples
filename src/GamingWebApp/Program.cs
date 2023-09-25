@@ -46,13 +46,13 @@ builder.Logging.AddOpenTelemetry(builder =>
     builder.AddOtlpExporter();
 });
 
-builder.Services.AddHsts(
-    options =>
-    {
-        options.MaxAge = TimeSpan.FromDays(100);
-        options.IncludeSubDomains = true;
-        options.Preload = true;
-    });
+// builder.Services.AddHsts(
+//     options =>
+//     {
+//         options.MaxAge = TimeSpan.FromDays(100);
+//         options.IncludeSubDomains = true;
+//         options.Preload = true;
+//     });
 
 var resourceBuilder = ResourceBuilder.CreateDefault().AddService("gaming-web-app")
     .AddAttributes(new List<KeyValuePair<string, object>>() {
@@ -63,13 +63,17 @@ var resourceBuilder = ResourceBuilder.CreateDefault().AddService("gaming-web-app
         new("region", "west-europe")
     });
 
+
+builder.Services.AddSingleton(new HighScoreMeter());
+
 builder.Services
     .AddOpenTelemetry()
         //.ConfigureResource(builder => builder.AddService("otel-worker-service"))
         .WithMetrics(provider => provider
-            .AddMeter("Techorama.Metrics")
+            .AddMeter(HighScoreMeter.Name)
             .AddConsoleExporter()
             .AddOtlpExporter()
+                     
             // .AddAzureMonitorMetricExporter(options =>
             // {
             //     options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
@@ -78,7 +82,8 @@ builder.Services
         .WithTracing(provider =>
         {
             //builder.SetErrorStatusOnException(true);
-            provider.AddSource("GamingWebApp");
+            provider.AddSource(Diagnostics.GamingWebActivitySource.Name);
+            provider.SetResourceBuilder(resourceBuilder);
             provider.AddServiceTraceEnricher(options => {
                 options.ApplicationName = true;
                 options.EnvironmentName = true;
@@ -90,6 +95,7 @@ builder.Services
             provider.SetResourceBuilder(resourceBuilder);
             provider.AddConsoleExporter(options => options.Targets = ConsoleExporterOutputTargets.Console);
             provider.AddOtlpExporter();
+            
             //provider.AddZipkinExporter();
            
             // provider.AddAzureMonitorTraceExporter(options =>

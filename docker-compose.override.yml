@@ -4,10 +4,11 @@ services:
   leaderboardwebapi:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=https://+:443;http://+:80;http://+:8080
+#      - ASPNETCORE_URLS=https://+:443;http://+:80;http://+:8080
+      - ASPNETCORE_URLS=http://+:80;http://+:8080
       - ASPNETCORE_MANAGEMENTPORT=8080
-      - KESTREL__CERTIFICATES__DEFAULT__PATH=/https/aspnetapp.pfx
-      - ConnectionStrings__LeaderboardContext=Server=sql.retrogasming.internal;Database=Leaderboard;User Id=sa;Password=Pass@word;Trusted_Connection=False;TrustServerCertificate=true
+#      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx
+      - ConnectionStrings__LeaderboardContext=Server=sql.data;Database=Leaderboard;User Id=sa;Password=Pass@word;Trusted_Connection=False;TrustServerCertificate=true
       #- KeyVaultUri=https://conferencedemoskeyvault.vault.azure.net/
     ports:
       - "4972:80"
@@ -15,7 +16,7 @@ services:
     depends_on:
       - sql.data
     volumes:
-       - ${HOME}/.aspnet/dev-certs/https:/.aspnet/dev-certs/
+       - ${HOME}/.aspnet/https:/https/
 #      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
     networks:
       - frontend
@@ -24,8 +25,10 @@ services:
   gamingwebapp:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=https://+:443;http://+:80
-      - LeaderboardApiOptions__BaseUrl=http://leaderboardwebapi
+#      - ASPNETCORE_URLS=https://+:443;http://+:80
+      - ASPNETCORE_URLS=http://+:80
+#      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx
+      - LeaderboardApiOptions__BaseUrl=http://leaderboardwebapis
     ports:
       - "5618:80"
       - "44325:443"
@@ -44,20 +47,11 @@ services:
       - MSSQL_PID=Developer
       - ACCEPT_EULA=Y
     ports:
-      - "1433"
+      - "5433:1433"
     networks:
       backend:
         aliases: 
           - sql.retrogaming.internal
-
-  seq:
-    image: datalust/seq:latest
-    environment: 
-      - ACCEPT_EULA=Y
-    ports:
-      - 5341:80
-    networks:
-      - backend
 
   # healthcheckui:
   #   image: xabarilcoding/healthchecksui:latest
