@@ -17,12 +17,12 @@ namespace LeaderboardWebAPI.Controllers
     [Produces("application/xml", "application/json")]
     public class ScoresController : ControllerBase
     {
-        private readonly LeaderboardContext context;
+        private readonly LeaderboardContext _context;
         private readonly ILogger<ScoresController> _logger;
 
         public ScoresController(LeaderboardContext context, ILogger<ScoresController> logger)
         {
-            this.context = context;
+            _context = context;
             _logger = logger;
         }
 
@@ -30,7 +30,7 @@ namespace LeaderboardWebAPI.Controllers
         public async Task<IEnumerable<Score>> Get(string game)
         {
             _logger.LogInformation("Retrieving scores for {Game}", game);
-            var scores = context.Scores.Where(s => s.Game == game).Include(s => s.Gamer);
+            var scores = _context.Scores.Where(s => s.Game == game).Include(s => s.Gamer);
             return await scores.ToListAsync().ConfigureAwait(false);
         }
 
@@ -40,20 +40,30 @@ namespace LeaderboardWebAPI.Controllers
             using (var activity = Diagnostics.LeaderboardActivitySource.StartActivity("PostScore"))
             {
 
-                _logger.LogInformation("adding score for {Nickname} in {Game}", nickname, game);
+                _logger.LogInformation("adding score {Score} for {Nickname} in {Game}", points, nickname, game);
 
                 activity?.SetTag("score.nickname", nickname);
                 activity?.SetTag("score.game", game);
                 activity?.SetTag("score.points", points);
 
                 // Lookup gamer based on nickname
-                Gamer gamer = await context.Gamers
+                Gamer gamer = await _context.Gamers
                    .FirstOrDefaultAsync(g => g.Nickname.ToLower() == nickname.ToLower())
                    .ConfigureAwait(false);
 
 
                 if (gamer == null)
+                {
+                    _logger.LogInformation("Gamer {Nickname} not found", nickname);
+                    activity?.AddEvent(new ActivityEvent("Gamer not found", DateTimeOffset.Now,
+                                                         new ActivityTagsCollection(new List<KeyValuePair<string,
+                                                             object>>()
+                                                         {
+                                                             new("gamer.nickname", nickname)
+                                                         })));
+                    
                     return NotFound();
+                }
 
                 activity?.AddEvent(new ActivityEvent("Gamer found", DateTimeOffset.Now,
                                                      new ActivityTagsCollection(new List<KeyValuePair<string, object>>()
@@ -62,7 +72,7 @@ namespace LeaderboardWebAPI.Controllers
                                                      })));
 
                 // Find highest score for game
-                var score = await context.Scores
+                var score = await _context.Scores
                    .Where(s => s.Game == game && s.Gamer == gamer)
                    .OrderByDescending(s => s.Points)
                    .FirstOrDefaultAsync()
@@ -73,7 +83,7 @@ namespace LeaderboardWebAPI.Controllers
                     _logger.LogInformation("Added score for {@Gamer} with {Points} for game {Game}", gamer, points,
                                            game);
                     score = new Score { Gamer = gamer, Points = points, Game = game };
-                    await context.Scores.AddAsync(score);
+                    await _context.Scores.AddAsync(score);
                     activity?.AddEvent(new ActivityEvent("AddedScore", DateTimeOffset.Now, new ActivityTagsCollection
                     {
                         new("score", points)
@@ -100,7 +110,7 @@ namespace LeaderboardWebAPI.Controllers
                     new("score", points)
                 }));
 
-                await context.SaveChangesAsync().ConfigureAwait(false);
+                await _context.SaveChangesAsync().ConfigureAwait(false);
                 // activity?.Stop();
                 return Ok();
 

@@ -8,29 +8,22 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using LeaderboardWebAPI.Metrics;
+using LeaderboardWebAPI.Models;
 using OpenTelemetry.Trace;
 
 namespace LeaderboardWebAPI.Controllers
 {
-    public class HighScore
-    {
-        public string Game { get; set; }
-        public string Nickname { get; set; }
-        public int Points { get; set; }
-    }
-
     [ApiController]
     [Route("api/v1.0/[controller]")]
     [Produces("application/xml", "application/json")]
     public class LeaderboardController : ControllerBase
     {
-        public LeaderboardContext context { get; }
-
+        private readonly LeaderboardContext _context;
         private readonly ILogger<LeaderboardController> _logger;
 
         public LeaderboardController(LeaderboardContext context, ILogger<LeaderboardController> logger)
         {
-            this.context = context;
+            _context = context;
             _logger = logger;
         }
 
@@ -45,14 +38,15 @@ namespace LeaderboardWebAPI.Controllers
         public async Task<ActionResult<IEnumerable<HighScore>>> Get(int limit = 10)
         {
             using var activity = Diagnostics.LeaderboardActivitySource.StartActivity("GetHighScore");
+            
             activity?.SetTag("leaderboard.limit", limit);
-            _logger?.LogInformation("Retrieving score list with a limit of {SearchLimit}.", limit);
+            _logger?.LogInformation("Retrieving score list with a limit of {SearchLimit}", limit);
 
             AnalyzeLimit(limit);
 
             try
             {
-                var scores = context.Scores
+                var scores = _context.Scores
                    .Select(score => new HighScore()
                     {
                         Game = score.Game,
@@ -66,7 +60,7 @@ namespace LeaderboardWebAPI.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ex.Message);
+                _logger!.LogError(ex, "Unknown exception occurred while retrieving high score list");
                 LeaderboardMeter.ExceptionOccured();
                 activity?.RecordException(ex);
                 activity?.SetStatus(ActivityStatusCode.Error);
