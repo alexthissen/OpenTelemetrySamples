@@ -1,10 +1,8 @@
-using Azure.Monitor.OpenTelemetry.AspNetCore;
-using Azure.Monitor.OpenTelemetry.Exporter;
 using GamingWebApp;
 using GamingWebApp.Proxy;
 using Microsoft.Extensions.Telemetry.Enrichment;
-using Microsoft.Extensions.Telemetry.Metering;
 using OpenTelemetry.Exporter;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.ResourceDetectors.Container;
 using OpenTelemetry.Resources;
@@ -13,7 +11,6 @@ using Polly;
 using Polly.Extensions.Http;
 using Polly.Timeout;
 using Refit;
-using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,13 +42,19 @@ builder.Services.AddHttpClient("WebAPIs", options =>
 .AddPolicyHandler(retry.WrapAsync(timeout))
 .AddTypedClient(RestService.For<ILeaderboardClient>);
 
-builder.Services.AddHsts(
-    options =>
-    {
-        options.MaxAge = TimeSpan.FromDays(100);
-        options.IncludeSubDomains = true;
-        options.Preload = true;
-    });
+builder.Logging.AddOpenTelemetry(builder =>
+{
+    builder.AddConsoleExporter();
+    builder.AddOtlpExporter();
+});
+
+// builder.Services.AddHsts(
+//     options =>
+//     {
+//         options.MaxAge = TimeSpan.FromDays(100);
+//         options.IncludeSubDomains = true;
+//         options.Preload = true;
+//     });
 
 var resourceBuilder = ResourceBuilder.CreateDefault().AddService("gaming-web-app")
     .AddAttributes(new List<KeyValuePair<string, object>>() {
@@ -63,21 +66,27 @@ var resourceBuilder = ResourceBuilder.CreateDefault().AddService("gaming-web-app
     })
     .AddDetector(new ContainerResourceDetector());
 
+
+builder.Services.AddSingleton(new HighScoreMeter());
+
 builder.Services
     .AddOpenTelemetry()
         //.ConfigureResource(builder => builder.AddService("otel-worker-service"))
         .WithMetrics(provider => provider
-            .AddMeter("Techorama.Metrics")
-            //.AddPrometheusExporter()
+            .AddMeter(HighScoreMeter.Name)
             .AddOtlpExporter(options => options.Endpoint = new Uri("http://jaeger:4317"))
-            .AddAzureMonitorMetricExporter(options =>
-            {
-                options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
-            }))
+            .AddOtlpExporter()
+                     
+            // .AddAzureMonitorMetricExporter(options =>
+            // {
+            //     options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
+            // })
+                     )
         .WithTracing(provider =>
         {
             //builder.SetErrorStatusOnException(true);
-            provider.AddSource("GamingWebApp");
+            provider.AddSource(Diagnostics.GamingWebActivitySource.Name);
+            provider.SetResourceBuilder(resourceBuilder);
             provider.AddServiceTraceEnricher(options =>
             {
                 options.ApplicationName = true;
@@ -89,12 +98,15 @@ builder.Services
             provider.AddAspNetCoreInstrumentation();
             provider.SetResourceBuilder(resourceBuilder);
             provider.AddConsoleExporter(options => options.Targets = ConsoleExporterOutputTargets.Console);
-            provider.AddZipkinExporter(options => options.Endpoint = new Uri("http://zipkin:9411/api/v2/spans"));
-            provider.AddOtlpExporter(options => options.Endpoint = new Uri("http://jaeger:4317"));
-            provider.AddAzureMonitorTraceExporter(options =>
-            {
-                options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
-            });
+            provider.AddOtlpExporter();
+            
+            //provider.AddZipkinExporter();
+           
+            // provider.AddAzureMonitorTraceExporter(options =>
+            // {
+            //     options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
+            // });
+            
         });
 
 

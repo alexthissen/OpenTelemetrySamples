@@ -1,0 +1,58 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+
+exporters:
+  logging:
+    loglevel: debug
+    
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+      
+  otlphttp/seq:
+    endpoint: http://seq:5341/ingest/otlp/
+    
+#  azuremonitor:
+#    instrumentation_key: 71538274-919e-44cf-b0d8-3dadd78dcfd0
+#    spaneventsenabled: true
+  
+  prometheus:
+    endpoint: 0.0.0.0:8889
+  
+  zipkin: 
+    endpoint: http://zipkin:9411/api/v2/spans
+
+extensions:
+  health_check:
+    endpoint: "0.0.0.0:13133"
+    path: "/health/status"
+    check_collector_pipeline:
+      enabled: true
+      interval: "5m"
+      exporter_failure_threshold: 5
+
+processors:
+  batch:
+
+service:
+  telemetry:
+    logs:
+      level: "debug"
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [logging, zipkin, otlp/jaeger]
+      processors: [batch]
+    metrics:
+      receivers: [otlp]
+      exporters: [logging, prometheus]
+      processors: [batch]
+    logs:
+      receivers: [otlp]
+      exporters: [logging, otlphttp/seq]
+      processors: [batch]

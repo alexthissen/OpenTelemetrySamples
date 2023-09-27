@@ -19,8 +19,15 @@
 		<PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.0-rc.1.23421.29" />
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.5" />
 		<PackageReference Include="OpenTelemetry.ResourceDetectors.Container" Version="1.0.0-beta.4" />
+		<PackageReference Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.0.0-beta.7" />
+<<<<<<< HEAD
+		<PackageReference Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.0.0-beta.7" />
+=======
+		<PackageReference Include="OpenTelemetry.ResourceDetectors.Container" Version="1.0.0-beta.4" />
+>>>>>>> main
 		<PackageReference Include="Refit.HttpClientFactory" Version="7.0.0" />
 
+		<PackageReference Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.0.0-beta.7" />
 		<PackageReference Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.0.0-beta.7" />
 		<PackageReference Include="Microsoft.Extensions.AmbientMetadata.Application" Version="8.0.0-rc.1.23453.1" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0-rc.1.23419.4" />

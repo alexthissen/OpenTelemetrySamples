@@ -1,61 +1,52 @@
-﻿using GamingWebApp.Proxy;
+﻿using System.Diagnostics;
+using GamingWebApp.Proxy;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Options;
+using OpenTelemetry.Trace;
 using Polly.Timeout;
 
-namespace GamingWebApp.Pages
+namespace GamingWebApp.Pages;
+
+public class IndexModel(IOptionsSnapshot<LeaderboardApiOptions> options,
+                        ILeaderboardClient proxy, 
+                        ILogger<IndexModel> logger, 
+                        IEnumerable<HighScore> scores) : PageModel
 {
-    public class IndexModel : PageModel
+    private readonly IOptionsSnapshot<LeaderboardApiOptions> options = options;
+
+    public IEnumerable<HighScore> Scores { get; private set; } = scores;
+
+    public async Task OnGetAsync([FromQuery] int limit = 10)
     {
-        private readonly ILogger<IndexModel> logger;
-        private readonly IOptionsSnapshot<LeaderboardApiOptions> options;
-        private readonly ILeaderboardClient proxy;
-
-        public IndexModel(IOptionsSnapshot<LeaderboardApiOptions> options,
-            ILeaderboardClient proxy, ILoggerFactory loggerFactory)
+        using var activity = Diagnostics.GamingWebActivitySource.StartActivity("GetHighScores");
+        Scores = new List<HighScore>();
+        try
         {
-            this.logger = loggerFactory.CreateLogger<IndexModel>();
-            this.options = options;
-            this.proxy = proxy;
+            logger.LogInformation("Retrieving high score list with limit of {Limit}", limit);
+            // Using injected typed HTTP client instead of locally created proxy
+            Scores = await proxy.GetHighScores(limit).ConfigureAwait(false);
+            
+            activity?.AddEvent(new("HighScoresRetrieved"));
+            
+            HighScoreMeter.HighScoreRetrieved();
+            logger.LogInformation("retrieved {Count} high scores", Scores.Count());
         }
-
-        public IEnumerable<HighScore> Scores { get; private set; }
-
-        public async Task OnGetAsync()
+            
+        catch (HttpRequestException ex)
         {
-            Scores = new List<HighScore>();
-            try
-            {
-                //using (var operation = telemetryClient.StartOperation<RequestTelemetry>("LeaderboardWebAPICall"))
-                {
-                    try
-                    {
-                        // Using injected typed HTTP client instead of locally created proxy
-                        int limit;
-
-                        Scores = await proxy.GetHighScores(
-                            Int32.TryParse(Request.Query["limit"], out limit) ? limit : 10
-                        ).ConfigureAwait(false);
-                    }
-                    catch
-                    {
-                        //operation.Telemetry.Success = false;
-                        throw;
-                    }
-                }
-            }
-            catch (HttpRequestException ex)
-            {
-                logger.LogInformation(ex, "Http request failed.");
-            }
-            catch (TimeoutRejectedException ex)
-            {
-                logger.LogDebug(ex, "Timeout occurred when retrieving high score list.");
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Unknown exception occurred while retrieving high score list");
-            }
+            logger.LogInformation(ex, "Http request failed");
+        }
+        catch (TimeoutRejectedException ex)
+        {
+            logger.LogDebug(ex, "Timeout occurred when retrieving high score list");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unknown exception occurred while retrieving high score list");
+            HighScoreMeter.HighScoreRetrievedException();
+            activity?.SetStatus(ActivityStatusCode.Error);
+            activity?.RecordException(ex);
         }
     }
 }

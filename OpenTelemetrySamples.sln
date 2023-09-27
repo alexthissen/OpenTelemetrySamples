@@ -12,6 +12,11 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{1D48AFF6-3958-46D5-97DB-74648C6BDABF}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		deployment\gamingwebapp.k8s-static.yaml = deployment\gamingwebapp.k8s-static.yaml
+		RetroGaming-k8s.yaml = RetroGaming-k8s.yaml
+		sample-secrets.json = sample-secrets.json
+		config\otel-collector-config.yaml = config\otel-collector-config.yaml
+		config\prometheus-config.yaml = config\prometheus-config.yaml
 	EndProjectSection
 EndProject
 Global

@@ -1,6 +1,4 @@
 ﻿using HealthChecks.UI.Client;
-using LeaderboardWebAPI.Infrastructure;
-using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,19 +26,21 @@ namespace LeaderboardWebApi.Infrastructure
 
             // Readiness and liveliness endpoints
             app.MapHealthChecks("/health/ready",
-                new HealthCheckOptions()
-                {
-                    Predicate = reg => reg.Tags.Contains("ready"),
-                    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
-                })
-                .RequireHost($"*:{app.Configuration["ManagementPort"]}");
+                                new HealthCheckOptions()
+                                {
+                                    Predicate = reg => reg.Tags.Contains("ready"),
+                                    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+                                })
+                //.RequireHost($"*:{app.Configuration["ManagementPort"]}");
+                ;
             app.MapHealthChecks("/health/lively",
-                new HealthCheckOptions()
-                {
-                    Predicate = _ => true,
-                    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
-                })
-                .RequireHost($"*:{app.Configuration["ManagementPort"]}");
+                                new HealthCheckOptions()
+                                {
+                                    Predicate = _ => true,
+                                    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+                                })
+                // .RequireHost($"*:{app.Configuration["ManagementPort"]}");
+                ;
         }
 
         public static void AddInstrumentation(this WebApplicationBuilder builder)
