@@ -56,7 +56,9 @@ namespace LeaderboardWebAPI.Controllers
                 
                 LeaderboardMeter.ScoreRetrieved();
                 // activity?.Stop();
-                return Ok(await scores.ToListAsync().ConfigureAwait(false));
+                Activity.Current?.AddEvent(new ActivityEvent("Prepared LINQ statement", 
+                tags: new ActivityTagsCollection(
+                    new List<KeyValuePair<string, object>>() { new("Test", 123) } )));return Ok(await scores.ToListAsync().ConfigureAwait(false));
             }
             catch (Exception ex)
             {

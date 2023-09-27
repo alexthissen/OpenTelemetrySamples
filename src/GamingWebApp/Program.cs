@@ -4,6 +4,7 @@ using Microsoft.Extensions.Telemetry.Enrichment;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
+using OpenTelemetry.ResourceDetectors.Container;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Polly;
@@ -25,7 +26,8 @@ var timeout = Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromMilliseconds
 var retry = HttpPolicyExtensions
     .HandleTransientHttpError()
     .Or<TimeoutRejectedException>()
-    .RetryAsync(3, onRetry: (exception, retryCount) => {
+    .RetryAsync(3, onRetry: (exception, retryCount) =>
+    {
         // TODO: Change to new trace event
         // Trace.TraceInformation($"Retry #{retryCount}");
         //Activity.Current.RecordException(exception, new TagList().Add("Retry count", retryCount));
@@ -61,7 +63,8 @@ var resourceBuilder = ResourceBuilder.CreateDefault().AddService("gaming-web-app
         new("service.namespace", "techorama"),
         new("service.instance.id", "gamingwebapp"),
         new("region", "west-europe")
-    });
+    })
+    .AddDetector(new ContainerResourceDetector());
 
 
 builder.Services.AddSingleton(new HighScoreMeter());
@@ -71,7 +74,7 @@ builder.Services
         //.ConfigureResource(builder => builder.AddService("otel-worker-service"))
         .WithMetrics(provider => provider
             .AddMeter(HighScoreMeter.Name)
-            .AddConsoleExporter()
+            .AddOtlpExporter(options => options.Endpoint = new Uri("http://jaeger:4317"))
             .AddOtlpExporter()
                      
             // .AddAzureMonitorMetricExporter(options =>
@@ -84,7 +87,8 @@ builder.Services
             //builder.SetErrorStatusOnException(true);
             provider.AddSource(Diagnostics.GamingWebActivitySource.Name);
             provider.SetResourceBuilder(resourceBuilder);
-            provider.AddServiceTraceEnricher(options => {
+            provider.AddServiceTraceEnricher(options =>
+            {
                 options.ApplicationName = true;
                 options.EnvironmentName = true;
                 options.BuildVersion = true;

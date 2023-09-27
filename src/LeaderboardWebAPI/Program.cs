@@ -31,12 +31,12 @@ using OpenTelemetry.Metrics;
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 var resourceBuilder = ResourceBuilder.CreateDefault()
-    .AddService("leaderboard-web-api-service2")
+    .AddService("leaderboard-web-api-service")
     .AddAttributes(new List<KeyValuePair<string, object>>() {
         new("app-version", "1.0"),
-        new("service.name", "leaderboard-web-api2"),
+        new("service.name", "leaderboard-web-api"),
         new("service.namespace", "techorama"),
-        new("service.instance.id", "leaderboardwebapi2"),
+        new("service.instance.id", "leaderboardwebapi"),
         new("region", "west-europe")
     })
    .AddTelemetrySdk();

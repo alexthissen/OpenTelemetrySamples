@@ -2,13 +2,12 @@ version: '3.4'
 
 services:
   leaderboardwebapi:
+    container_name: webapi
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-#      - ASPNETCORE_URLS=https://+:443;http://+:80;http://+:8080
-      - ASPNETCORE_URLS=http://+:80;http://+:8080
+      - ASPNETCORE_URLS=https://+:443;http://+:80;http://+:8080
       - ASPNETCORE_MANAGEMENTPORT=8080
-#      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx
-      - ConnectionStrings__LeaderboardContext=Server=sql.data;Database=Leaderboard;User Id=sa;Password=Pass@word;Trusted_Connection=False;TrustServerCertificate=true
+      - ConnectionStrings__LeaderboardContext=Server=sql.retrogaming.internal;Database=Leaderboard;User Id=sa;Password=Pass@word;Trusted_Connection=False;TrustServerCertificate=true
       #- KeyVaultUri=https://conferencedemoskeyvault.vault.azure.net/
     ports:
       - "4972:80"
@@ -16,42 +15,51 @@ services:
     depends_on:
       - sql.data
     volumes:
-       - ${HOME}/.aspnet/https:/https/
-#      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
+      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
     networks:
       - frontend
       - backend
 
   gamingwebapp:
+    container_name: webapp
     environment:
+      - OTEL_DOTNET_AUTO_CONTAINER_RESOURCE_DETECTOR_ENABLED=true
       - ASPNETCORE_ENVIRONMENT=Development
-#      - ASPNETCORE_URLS=https://+:443;http://+:80
-      - ASPNETCORE_URLS=http://+:80
-#      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx
-      - LeaderboardApiOptions__BaseUrl=http://leaderboardwebapis
+      - ASPNETCORE_URLS=https://+:443;http://+:80
+      - LeaderboardApiOptions__BaseUrl=http://leaderboardwebapi
     ports:
       - "5618:80"
       - "44325:443"
     depends_on:
       - leaderboardwebapi
     volumes:
-      -  ${HOME}/.aspnet/https:/https/
-#      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
+      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
     networks:
       - frontend
 
   sql.data:
+    container_name: sql
     image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
       - SA_PASSWORD=Pass@word
       - MSSQL_PID=Developer
       - ACCEPT_EULA=Y
     ports:
-      - "5433:1433"
+      - "1433"
     networks:
       backend:
         aliases: 
           - sql.retrogaming.internal
+
+  seq:
+    image: datalust/seq:latest
+    container_name: seq
+    environment: 
+      - ACCEPT_EULA=Y
+    ports:
+      - 5341:80
+    networks:
+      - backend
 
   # healthcheckui:
   #   image: xabarilcoding/healthchecksui:latest
@@ -64,6 +72,30 @@ services:
   #     - 5000:80
   #   networks:
   #     - backend
+
+  zipkin:
+    image: ghcr.io/openzipkin/zipkin:latest
+    container_name: zipkin
+    ports:
+      - 9411:9411
+    networks:
+      - frontend
+      - backend
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true 
+    ports:
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - 16686:16686 
+      - 4317:4317 
+      - 4318:4318 
+    networks:
+      - frontend
+      - backend
 
   dotnet-monitor:
     image: mcr.microsoft.com/dotnet/monitor:7
