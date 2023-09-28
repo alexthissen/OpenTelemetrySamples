@@ -89,7 +89,7 @@ namespace LeaderboardWebAPI.Controllers
                 }
                 else
                 {
-                    HighScoreMeter.AddScore(points);
+                    HighScoreMeter.AddScore(points, score.Game);
                     if (score.Points > points)
                         return Ok();
                     
@@ -104,10 +104,11 @@ namespace LeaderboardWebAPI.Controllers
                 // RetroGamingEventSource.Log.NewHighScore(points);
 
                 _logger.LogInformation("New high score {Points}", points);
-                HighScoreMeter.AddHighScore();
-                activity?.AddEvent(new ActivityEvent("NewHighScore", DateTimeOffset.Now, new ActivityTagsCollection()
+                HighScoreMeter.AddHighScore(score.Game);
+                activity?.AddEvent(new ActivityEvent("NewHighScore", DateTimeOffset.Now, new ActivityTagsCollection
                 {
-                    new("score", points)
+                    new("score", points),
+                    new("game", game)
                 }));
 
                 await _context.SaveChangesAsync().ConfigureAwait(false);

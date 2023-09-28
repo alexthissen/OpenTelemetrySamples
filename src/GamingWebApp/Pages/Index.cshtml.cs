@@ -19,7 +19,7 @@ public class IndexModel(IOptionsSnapshot<LeaderboardApiOptions> options,
 
     public async Task OnGetAsync([FromQuery] int limit = 10)
     {
-        using var activity = Diagnostics.GamingWebActivitySource.StartActivity("GetHighScores");
+        using var activity = Diagnostics.GamingWebActivitySource.StartActivity("get_high_scores");
         Scores = new List<HighScore>();
         try
         {
@@ -44,7 +44,6 @@ public class IndexModel(IOptionsSnapshot<LeaderboardApiOptions> options,
         catch (Exception ex)
         {
             logger.LogError(ex, "Unknown exception occurred while retrieving high score list");
-            HighScoreMeter.HighScoreRetrievedException();
             activity?.SetStatus(ActivityStatusCode.Error);
             activity?.RecordException(ex);
         }

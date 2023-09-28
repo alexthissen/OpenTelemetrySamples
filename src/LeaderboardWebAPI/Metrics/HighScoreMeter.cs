@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 
 namespace LeaderboardWebAPI.Metrics
@@ -16,14 +17,8 @@ namespace LeaderboardWebAPI.Metrics
         
         public static string MeterName => "leaderboard.highscore";
 
-        public static void AddHighScore()
-        {
-            HighScoreCounter.Add(1);
-        }
-        
-        public static void AddScore(int score)
-        {
-            ScoreHistogram.Record(score);
-        }
+        public static void AddHighScore(string game) => HighScoreCounter.Add(1, new []{ new KeyValuePair<string, object>("game", game)});
+
+        public static void AddScore(int score, string game) => ScoreHistogram.Record(score, new [] { new KeyValuePair<string, object>("game", game) });
     }
 }
