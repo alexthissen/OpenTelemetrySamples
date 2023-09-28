@@ -37,7 +37,7 @@ namespace LeaderboardWebAPI.Controllers
         [ProducesResponseType(typeof(IEnumerable<HighScore>), 200)]
         public async Task<ActionResult<IEnumerable<HighScore>>> Get(int limit = 10)
         {
-            using var activity = Diagnostics.LeaderboardActivitySource.StartActivity("GetHighScore");
+            using var activity = Diagnostics.LeaderboardActivitySource.StartActivity("get_scores");
             
             activity?.SetTag("leaderboard.limit", limit);
             _logger?.LogInformation("Retrieving score list with a limit of {SearchLimit}", limit);
@@ -63,7 +63,6 @@ namespace LeaderboardWebAPI.Controllers
             catch (Exception ex)
             {
                 _logger!.LogError(ex, "Unknown exception occurred while retrieving high score list");
-                LeaderboardMeter.ExceptionOccured();
                 activity?.RecordException(ex);
                 activity?.SetStatus(ActivityStatusCode.Error);
             }

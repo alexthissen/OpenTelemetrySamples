@@ -65,8 +65,6 @@ builder.Services.AddServiceLogEnricher(options =>
     options.DeploymentRing = true;
 });
 
-builder.Services.AddSingleton(new LeaderboardMeter());
-builder.Services.AddSingleton(new ScoreMeter());
 
 builder.Services
     .AddOpenTelemetry()
@@ -99,7 +97,7 @@ builder.Services
         })
    .WithMetrics(metrics =>
     {
-        metrics.AddMeter(LeaderboardMeter.MeterName, ScoreMeter.MeterName);
+        metrics.AddMeter(LeaderboardMeter.MeterName, HighScoreMeter.MeterName);
         metrics.AddOtlpExporter();
         metrics.AddConsoleExporter();
     });
