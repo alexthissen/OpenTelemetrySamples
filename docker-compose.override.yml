@@ -8,6 +8,7 @@ services:
       - ASPNETCORE_URLS=http://+:80;http://+:8080
       - ASPNETCORE_MANAGEMENTPORT=8080
       - ConnectionStrings__LeaderboardContext=Server=sql.retrogaming.internal;Database=Leaderboard;User Id=sa;Password=Pass@word;Trusted_Connection=False;TrustServerCertificate=true
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
       #- KeyVaultUri=https://conferencedemoskeyvault.vault.azure.net/
     ports:
       - 4972:80
@@ -27,6 +28,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:80
       - LeaderboardApiOptions__BaseUrl=http://leaderboardwebapi
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
     ports:
       - 5618:80
       - 44325:443
@@ -88,11 +90,7 @@ services:
     environment:
       - COLLECTOR_OTLP_ENABLED=true 
     ports:
-      - "6831:6831/udp"
-      - "6832:6832/udp"
       - 16686:16686 
-      - 4317:4317 
-      - 4318:4318 
     networks:
       - frontend
       - backend
@@ -104,6 +102,28 @@ services:
     environment:
       - DOTNETMONITOR_Authentication:MonitorApiKey:Subject=a65223c0-4066-4594-ae46-f3a1fad83a37
       - DOTNETMONITOR_Authentication:MonitorApiKey:PublicKey=eyJBZGRpdGlvbmFsRGF0YSI6e30sIkNydiI6IlAtMzg0IiwiS2V5T3BzIjpbXSwiS3R5IjoiRUMiLCJYIjoiZDk0SFNXQXdrbmxPZTNBWWJhRTVfVmxJTFd5QVNhbDhvQkV2bHM2YTZucVVvcUVCQ04zZVhUNmtDb216S0syRyIsIlg1YyI6W10sIlkiOiJmb3RySFh6Sml2ZGN2RUVoY24zVlZtVUt4Q1ZrVk4wSnVxaUVmRFQxblhEN3VhTTZMcmRDUEVXRzB4dDBHYW1FIiwiS2V5U2l6ZSI6Mzg0LCJIYXNQcml2YXRlS2V5IjpmYWxzZSwiQ3J5cHRvUHJvdmlkZXJGYWN0b3J5Ijp7IkNyeXB0b1Byb3ZpZGVyQ2FjaGUiOnt9LCJDYWNoZVNpZ25hdHVyZVByb3ZpZGVycyI6dHJ1ZSwiU2lnbmF0dXJlUHJvdmlkZXJPYmplY3RQb29sQ2FjaGVTaXplIjoyNH19
+    networks:
+      - backend
+
+  otel-collector:
+    container_name: otel-collector
+    image: otel/opentelemetry-collector-contrib:latest
+    volumes:
+      - ./config/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    command: [ "--config=/etc/otel-collector-config.yaml" ]
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    networks:
+      - backend
+      - frontend
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./config/prometheus-config.yaml:/etc/prometheus/prometheus.yml
+    ports:
+      - 9090:9090 # Port for User Interface
     networks:
       - backend
 

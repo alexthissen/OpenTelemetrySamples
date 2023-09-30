@@ -2,11 +2,11 @@ using System.Diagnostics.Metrics;
 
 namespace LeaderboardWebAPI.Metrics
 {
-    public class LeaderboardMeter
+    public static class LeaderboardMeter
     {
         private static Counter<int> _highScoreRetrievedCounter;
         private static readonly Meter Meter = new Meter(MeterName);
-        public LeaderboardMeter()
+        static LeaderboardMeter()
         {
             _highScoreRetrievedCounter = Meter.CreateCounter<int>("highscore.retrieved", "points", "Retrieved high scores");
             Meter.CreateCounter<int>("exceptionsOccured");
