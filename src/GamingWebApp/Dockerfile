@@ -13,6 +13,7 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["src/GamingWebApp/GamingWebApp.csproj", "src/GamingWebApp/"]
 RUN dotnet restore "src/GamingWebApp/GamingWebApp.csproj"
+RUN dotnet dev-certs https --trust
 COPY . .
 WORKDIR "/src/src/GamingWebApp"
 RUN dotnet build "GamingWebApp.csproj" -c Release -o /app/build

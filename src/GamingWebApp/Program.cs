@@ -123,7 +123,7 @@ else
     host.UseHsts();
 }
 
-host.UseHttpsRedirection();
+// host.UseHttpsRedirection();
 host.UseStaticFiles();
 host.UseRouting();
 host.UseAuthorization();
