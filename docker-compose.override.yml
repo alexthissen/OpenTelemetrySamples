@@ -40,7 +40,7 @@ services:
       - frontend
 
   sql.data:
-    container_name: sql
+    container_name: sql.retrogaming
     image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
       - SA_PASSWORD=Pass@word
