@@ -102,6 +102,7 @@ builder.Services
         metrics.AddMeter(LeaderboardMeter.MeterName, HighScoreMeter.MeterName, HealthCheckMeter.MeterName);
         metrics.AddOtlpExporter();
         metrics.AddConsoleExporter();
+        metrics.AddHealhCheckMetrics();
     });
 
 
@@ -110,7 +111,7 @@ IHealthChecksBuilder healthChecks = builder.Services.AddHealthChecks()
    .AddCheck("Metrics", () => HealthCheckResult.Degraded("OK"), tags: new[] { "ready" });
 
 
-builder.Services.AddSingleton<IHealthCheckPublisher, MetricsHealthCheckPublisher>();
+builder.Services.AddHealthMetrics();
 
 
 // Add configuration provider for Azure Key Vault
