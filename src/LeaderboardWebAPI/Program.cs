@@ -24,7 +24,9 @@ using OpenTelemetry.Trace;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using LeaderboardWebAPI;
 using LeaderboardWebAPI.Metrics;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 
@@ -97,16 +99,19 @@ builder.Services
         })
    .WithMetrics(metrics =>
     {
-        metrics.AddMeter(LeaderboardMeter.MeterName, HighScoreMeter.MeterName);
+        metrics.AddMeter(LeaderboardMeter.MeterName, HighScoreMeter.MeterName, HealthCheckMeter.MeterName);
         metrics.AddOtlpExporter();
         metrics.AddConsoleExporter();
     });
 
-// Read Azure Key Vault client details from mounted secret in Kubernetes
-builder.Configuration.AddJsonFile("secrets/appsettings.secrets.json", optional: true);
 
 // Prepare health checks services
-IHealthChecksBuilder healthChecks = builder.Services.AddHealthChecks();
+IHealthChecksBuilder healthChecks = builder.Services.AddHealthChecks()
+   .AddCheck("Metrics", () => HealthCheckResult.Degraded("OK"), tags: new[] { "ready" });
+
+
+builder.Services.AddSingleton<IHealthCheckPublisher, MetricsHealthCheckPublisher>();
+
 
 // Add configuration provider for Azure Key Vault
 if (!String.IsNullOrEmpty(builder.Configuration["KeyVaultUri"]))
@@ -144,8 +149,9 @@ builder.Services.AddDbContext<LeaderboardContext>(options =>
         errorNumbersToAdd: null);
     });
 });
+
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-//healthChecks?.AddDbContextCheck<LeaderboardContext>("database", tags: new[] { "ready" });
+healthChecks?.AddDbContextCheck<LeaderboardContext>("database", tags: new[] { "ready" });
 
 // Add log providers
 // builder.Logging.AddSeq("http://seq:5341");

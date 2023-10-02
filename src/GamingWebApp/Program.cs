@@ -71,19 +71,10 @@ builder.Services.AddServiceLogEnricher(options =>
     options.DeploymentRing = true;
 });
 
-// builder.Services.AddHsts(
-//     options =>
-//     {
-//         options.MaxAge = TimeSpan.FromDays(100);
-//         options.IncludeSubDomains = true;
-//         options.Preload = true;
-//     });
-
 builder.Services.AddSingleton(new HighScoreMeter());
 
 builder.Services
     .AddOpenTelemetry()
-        //.ConfigureResource(builder => builder.AddService("otel-worker-service"))
         .WithMetrics(provider => provider
             .AddMeter(HighScoreMeter.Name)
             .AddOtlpExporter()
