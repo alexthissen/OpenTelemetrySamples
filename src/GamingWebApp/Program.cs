@@ -42,10 +42,33 @@ builder.Services.AddHttpClient("WebAPIs", options =>
 .AddPolicyHandler(retry.WrapAsync(timeout))
 .AddTypedClient(RestService.For<ILeaderboardClient>);
 
-builder.Logging.AddOpenTelemetry(builder =>
+var resourceBuilder = ResourceBuilder.CreateDefault().AddService("gaming-web-app")
+   .AddAttributes(new List<KeyValuePair<string, object>>() {
+        new("app-version", "1.0"),
+        new("service.name", "gaming-web-app"),
+        new("service.namespace", "techorama"),
+        new("service.instance.id", "gamingwebapp"),
+        new("region", "west-europe")
+    })
+   .AddDetector(new ContainerResourceDetector())
+   .AddTelemetrySdk();
+
+builder.Services.AddLogging(logging => logging.AddOpenTelemetry(openTelemetryLoggerOptions =>
 {
-    builder.AddConsoleExporter();
-    builder.AddOtlpExporter();
+    openTelemetryLoggerOptions.SetResourceBuilder(resourceBuilder);
+    // Some important options to improve data quality
+    openTelemetryLoggerOptions.IncludeScopes = true;
+    openTelemetryLoggerOptions.IncludeFormattedMessage = true;
+    openTelemetryLoggerOptions.AddOtlpExporter();
+}));
+
+
+builder.Services.AddServiceLogEnricher(options =>
+{
+    options.BuildVersion = true;
+    options.ApplicationName = true;
+    options.EnvironmentName = true;
+    options.DeploymentRing = true;
 });
 
 // builder.Services.AddHsts(
@@ -56,17 +79,6 @@ builder.Logging.AddOpenTelemetry(builder =>
 //         options.Preload = true;
 //     });
 
-var resourceBuilder = ResourceBuilder.CreateDefault().AddService("gaming-web-app")
-    .AddAttributes(new List<KeyValuePair<string, object>>() {
-        new("app-version", "1.0"),
-        new("service.name", "gaming-web-app"),
-        new("service.namespace", "techorama"),
-        new("service.instance.id", "gamingwebapp"),
-        new("region", "west-europe")
-    })
-    .AddDetector(new ContainerResourceDetector());
-
-
 builder.Services.AddSingleton(new HighScoreMeter());
 
 builder.Services
@@ -74,9 +86,7 @@ builder.Services
         //.ConfigureResource(builder => builder.AddService("otel-worker-service"))
         .WithMetrics(provider => provider
             .AddMeter(HighScoreMeter.Name)
-            .AddOtlpExporter(options => options.Endpoint = new Uri("http://jaeger:4317"))
             .AddOtlpExporter()
-                     
             // .AddAzureMonitorMetricExporter(options =>
             // {
             //     options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
