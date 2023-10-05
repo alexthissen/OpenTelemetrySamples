@@ -1,8 +1,10 @@
 
-let gameList = ['Pac-Man', 'Donky-Kong', 'Super Mario', 'Paperboy']
+let gameList = ['Pac-man', 'Donkey Kong', 'Super Mario', 'Paperboy']
 let gamerList = ['LiekGeek', 'LX360', 'Techorama']
 
-let url = 'https://symmetrical-spoon-r4r9x97xqgp36rr-4972.preview.app.github.dev/api/v1.0/Scores/'
+let url = 'http://localhost:4972/api/v1.0/Scores/'
+
+let getUrl = 'http://localhost:5618/'
 
 
 setInterval(() => {
@@ -19,5 +21,14 @@ setInterval(() => {
         },
         body: score
 
+    }).then((response) => {
+        console.log(`Added score {${score}} for gamer {${gamer}} on game {${game}}`);
     })
-}, 100);
+    
+}, 5000);
+
+
+setInterval(() => {
+    let limit = Math.floor(Math.random() * 10);
+    fetch(`${getUrl}?limit=${limit}`)
+}, 2000);

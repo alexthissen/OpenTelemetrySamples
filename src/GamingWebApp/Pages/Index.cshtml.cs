@@ -30,6 +30,7 @@ public class IndexModel(IOptionsSnapshot<LeaderboardApiOptions> options,
             activity?.AddEvent(new("HighScoresRetrieved"));
             
             HighScoreMeter.HighScoreRetrieved();
+            
             logger.LogInformation("retrieved {Count} high scores", Scores.Count());
         }
             
@@ -44,6 +45,7 @@ public class IndexModel(IOptionsSnapshot<LeaderboardApiOptions> options,
         catch (Exception ex)
         {
             logger.LogError(ex, "Unknown exception occurred while retrieving high score list");
+            
             activity?.SetStatus(ActivityStatusCode.Error);
             activity?.RecordException(ex);
         }

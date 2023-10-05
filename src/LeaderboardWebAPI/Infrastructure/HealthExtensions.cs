@@ -9,11 +9,11 @@ namespace LeaderboardWebAPI.Infrastructure
         public static IServiceCollection AddHealthMetrics(this IServiceCollection services)
         {
             services.AddSingleton<IHealthCheckPublisher, MetricsHealthCheckPublisher>();
-
+        
             return services;
         }
-
-        public static MeterProviderBuilder AddHealhCheckMetrics(
+        
+        public static MeterProviderBuilder AddHealthCheckMetrics(
             this MeterProviderBuilder builder)
         {
             builder.AddMeter(HealthCheckMeter.MeterName);

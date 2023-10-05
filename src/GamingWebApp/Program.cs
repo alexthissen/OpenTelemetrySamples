@@ -1,6 +1,10 @@
+using System.Diagnostics;
+using Azure.Monitor.OpenTelemetry.AspNetCore;
 using GamingWebApp;
 using GamingWebApp.Proxy;
+using Microsoft.Extensions.AmbientMetadata;
 using Microsoft.Extensions.Telemetry.Enrichment;
+using Microsoft.Extensions.Telemetry.Metering;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
@@ -30,7 +34,8 @@ var retry = HttpPolicyExtensions
     {
         // TODO: Change to new trace event
         // Trace.TraceInformation($"Retry #{retryCount}");
-        //Activity.Current.RecordException(exception, new TagList().Add("Retry count", retryCount));
+        Activity.Current?.RecordException(exception.Exception, new TagList(){new KeyValuePair<string, object?>("retry-count", retryCount.ToString())});
+        Activity.Current?.SetStatus(Status.Error);
     });
 
 builder.Services.AddHttpClient("WebAPIs", options =>
@@ -42,27 +47,30 @@ builder.Services.AddHttpClient("WebAPIs", options =>
 .AddPolicyHandler(retry.WrapAsync(timeout))
 .AddTypedClient(RestService.For<ILeaderboardClient>);
 
-var resourceBuilder = ResourceBuilder.CreateDefault().AddService("gaming-web-app")
+var resourceBuilder = ResourceBuilder.CreateDefault()
+   .AddService(serviceName:"gaming-web-app", 
+               serviceNamespace:"techorama", 
+               serviceVersion:"1.0.0", 
+               autoGenerateServiceInstanceId: false, 
+               serviceInstanceId: "gamingwebapp")
+    
    .AddAttributes(new List<KeyValuePair<string, object>>() {
         new("app-version", "1.0"),
-        new("service.name", "gaming-web-app"),
-        new("service.namespace", "techorama"),
-        new("service.instance.id", "gamingwebapp"),
         new("region", "west-europe")
     })
-   .AddDetector(new ContainerResourceDetector())
-   .AddTelemetrySdk();
+   .AddDetector(new ContainerResourceDetector());
 
-builder.Services.AddLogging(logging => logging.AddOpenTelemetry(openTelemetryLoggerOptions =>
+builder.Logging.AddOpenTelemetry(options =>
 {
-    openTelemetryLoggerOptions.SetResourceBuilder(resourceBuilder);
     // Some important options to improve data quality
-    openTelemetryLoggerOptions.IncludeScopes = true;
-    openTelemetryLoggerOptions.IncludeFormattedMessage = true;
-    openTelemetryLoggerOptions.AddOtlpExporter();
-}));
+    options.IncludeScopes = true;
+    options.IncludeFormattedMessage = true;
+    
+    options.SetResourceBuilder(resourceBuilder);
+    options.AddOtlpExporter();
+});
 
-
+builder.Host.UseApplicationMetadata("AmbientMetadata:Application");
 builder.Services.AddServiceLogEnricher(options =>
 {
     options.BuildVersion = true;
@@ -71,18 +79,17 @@ builder.Services.AddServiceLogEnricher(options =>
     options.DeploymentRing = true;
 });
 
-builder.Services.AddSingleton(new HighScoreMeter());
-
 builder.Services
     .AddOpenTelemetry()
         .WithMetrics(provider => provider
             .AddMeter(HighScoreMeter.Name)
             .AddOtlpExporter()
+                        .AddMetering()
             // .AddAzureMonitorMetricExporter(options =>
             // {
             //     options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
             // })
-                     )
+            )
         .WithTracing(provider =>
         {
             //builder.SetErrorStatusOnException(true);
@@ -97,10 +104,9 @@ builder.Services
             });
             provider.AddHttpClientInstrumentation();
             provider.AddAspNetCoreInstrumentation();
-            provider.SetResourceBuilder(resourceBuilder);
+            
             provider.AddConsoleExporter(options => options.Targets = ConsoleExporterOutputTargets.Console);
             provider.AddOtlpExporter();
-            
             //provider.AddZipkinExporter();
            
             // provider.AddAzureMonitorTraceExporter(options =>

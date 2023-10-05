@@ -24,7 +24,6 @@ using OpenTelemetry.Trace;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using LeaderboardWebAPI;
 using LeaderboardWebAPI.Metrics;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using OpenTelemetry.Logs;
@@ -33,12 +32,14 @@ using OpenTelemetry.Metrics;
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 var resourceBuilder = ResourceBuilder.CreateDefault()
-    .AddService("leaderboard-web-api-service")
-    .AddAttributes(new List<KeyValuePair<string, object>>() {
+    .AddService(serviceName:"leaderboard-web-api-service",
+                serviceNamespace: "techorama",
+                serviceVersion: "1.0",
+                autoGenerateServiceInstanceId: false,
+                serviceInstanceId: "leaderboardwebapi")
+    .AddAttributes(new List<KeyValuePair<string, object>>
+    {
         new("app-version", "1.0"),
-        new("service.name", "leaderboard-web-api"),
-        new("service.namespace", "techorama"),
-        new("service.instance.id", "leaderboardwebapi"),
         new("region", "west-europe")
     })
    .AddTelemetrySdk();
@@ -99,10 +100,10 @@ builder.Services
         })
    .WithMetrics(metrics =>
     {
-        metrics.AddMeter(LeaderboardMeter.MeterName, HighScoreMeter.MeterName, HealthCheckMeter.MeterName);
+        metrics.AddMeter(LeaderboardMeter.MeterName, HighScoreMeter.MeterName);
         metrics.AddOtlpExporter();
         metrics.AddConsoleExporter();
-        metrics.AddHealhCheckMetrics();
+        metrics.AddHealthCheckMetrics();
     });
 
 

@@ -19,8 +19,8 @@ namespace LeaderboardWebAPI.Infrastructure
             modelBuilder.Entity<Score>()
                 .ToTable("Scores")
                 .HasData(
-                    new Score() { Id = 1, GamerId = 1, Points = 1234, Game = "Pac-man" },
-                    new Score() { Id = 2, GamerId = 2, Points = 424242, Game = "Donkey Kong" }
+                    new Score() { Id = 1, GamerId = 1, Points = 12, Game = "Pac-man" },
+                    new Score() { Id = 2, GamerId = 2, Points = 42, Game = "Donkey Kong" }
                 );
         }
 

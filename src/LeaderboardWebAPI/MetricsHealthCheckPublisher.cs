@@ -10,46 +10,39 @@ namespace LeaderboardWebAPI
     {
         public Task PublishAsync(HealthReport report, CancellationToken cancellationToken)
         {
-
             foreach (var reportEntry in report.Entries)
             {
-                switch (reportEntry.Value)
-                {
-                    case { Status: HealthStatus.Healthy }:
-                        HealthCheckMeter.HealthyCheck(reportEntry.Key);
-                        break;
-                    case { Status: HealthStatus.Degraded }:
-                        HealthCheckMeter.DegradedCheck(reportEntry.Key);
-                        break;
-                    case { Status: HealthStatus.Unhealthy }:
-                        HealthCheckMeter.UnhealthyCheck(reportEntry.Key);
-                        break;
-                }
+                HealthCheckMeter.HealthCheck(reportEntry.Key, reportEntry.Value.Status);
             }
+            
+            HealthCheckMeter.HealthCheck("leaderboard.healthcheck", report.Status);
 
             return Task.CompletedTask;
         }
     }
-    
+
     public static class HealthCheckMeter
     {
-        
         private static readonly Meter Meter = new Meter(MeterName);
-        private static readonly Counter<int> HealthyCheckCounter;
-        private static readonly Counter<int> DegradedCheckCounter;
-        private static readonly Counter<int> UnhealthyCheckCounter;
+        private static readonly ObservableGauge<int> HealthCheckGauge;
+
+        private static int _status;
+        private static string _reportName = "";
         
         static HealthCheckMeter()
         {
-            HealthyCheckCounter = Meter.CreateCounter<int>("healthcheck.count", "points", "Health check count");
-            UnhealthyCheckCounter = Meter.CreateCounter<int>("healthcheck.unhealthy.count", "points", "Unhealthy health check count");
-            DegradedCheckCounter = Meter.CreateCounter<int>("healthcheck.degraded.count", "points", "Degraded health check count");
+            HealthCheckGauge =
+                Meter.CreateObservableGauge<int>("healthcheck.status", 
+                                                 () => new Measurement<int>(_status, new KeyValuePair<string, object>("report", _reportName)),
+                                                 "points", "Health check status");
         }
-
+        
         public static string MeterName => "leaderboard.healthcheck";
 
-        public static void HealthyCheck(string reportEntryKey) => HealthyCheckCounter.Add(1, new []{ new KeyValuePair<string, object>("check", reportEntryKey)});
-        public static void DegradedCheck(string reportEntryKey) => DegradedCheckCounter.Add(1, new []{ new KeyValuePair<string, object>("check", reportEntryKey)});
-        public static void UnhealthyCheck(string reportEntryKey) => UnhealthyCheckCounter.Add(1, new []{ new KeyValuePair<string, object>("check", reportEntryKey)});
+        public static void HealthCheck(string reportEntryKey, HealthStatus healthStatus)
+        {
+            _reportName = reportEntryKey;
+            _status = (int)healthStatus;
+        }
     }
 }

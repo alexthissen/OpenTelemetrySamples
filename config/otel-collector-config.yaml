@@ -16,15 +16,24 @@ exporters:
   otlphttp/seq:
     endpoint: http://seq:5341/ingest/otlp/
     
-#  azuremonitor:
-#    instrumentation_key: 71538274-919e-44cf-b0d8-3dadd78dcfd0
-#    spaneventsenabled: true
+  azuremonitor:
+    instrumentation_key: 71538274-919e-44cf-b0d8-3dadd78dcfd0
+    spaneventsenabled: true
   
   prometheus:
     endpoint: 0.0.0.0:8889
   
   zipkin: 
     endpoint: http://zipkin:9411/api/v2/spans
+    
+    
+  ####Signoz
+  
+  otlp/signoz:
+    endpoint: host.docker.internal:44317
+    tls:
+      insecure: true
+  
 
 extensions:
   health_check:
@@ -46,13 +55,13 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [logging, zipkin, otlp/jaeger]
+      exporters: [logging, zipkin, otlp/jaeger, azuremonitor, otlp/signoz]
       processors: [batch]
     metrics:
       receivers: [otlp]
-      exporters: [logging, prometheus]
+      exporters: [logging, prometheus, azuremonitor, otlp/signoz]
       processors: [batch]
     logs:
       receivers: [otlp]
-      exporters: [logging, otlphttp/seq]
+      exporters: [logging, otlphttp/seq, azuremonitor, otlp/signoz]
       processors: [batch]

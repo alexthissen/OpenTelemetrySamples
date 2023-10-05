@@ -17,20 +17,20 @@ namespace LeaderboardWebAPI.Controllers
     [Produces("application/xml", "application/json")]
     public class ScoresController : ControllerBase
     {
-        private readonly LeaderboardContext _context;
-        private readonly ILogger<ScoresController> _logger;
+        private readonly LeaderboardContext context;
+        private readonly ILogger<ScoresController> logger;
 
         public ScoresController(LeaderboardContext context, ILogger<ScoresController> logger)
         {
-            _context = context;
-            _logger = logger;
+            this.context = context;
+            this.logger = logger;
         }
 
         [HttpGet("{game}")]
         public async Task<IEnumerable<Score>> Get(string game)
         {
-            _logger.LogInformation("Retrieving scores for {Game}", game);
-            var scores = _context.Scores.Where(s => s.Game == game).Include(s => s.Gamer);
+            logger.LogInformation("Retrieving scores for {Game}", game);
+            var scores = context.Scores.Where(s => s.Game == game).Include(s => s.Gamer);
             return await scores.ToListAsync().ConfigureAwait(false);
         }
 
@@ -39,20 +39,17 @@ namespace LeaderboardWebAPI.Controllers
         {
             using (var activity = Diagnostics.LeaderboardActivitySource.StartActivity("PostScore"))
             {
-                _logger.LogInformation("adding score {Score} for {Nickname} in {Game}", points, nickname, game);
-
                 activity?.SetTag("score.nickname", nickname);
                 activity?.SetTag("score.game", game);
                 activity?.SetTag("score.points", points);
 
                 // Lookup gamer based on nickname
-                Gamer gamer = await _context.Gamers
+                Gamer gamer = await context.Gamers
                    .FirstOrDefaultAsync(g => g.Nickname.ToLower() == nickname.ToLower())
                    .ConfigureAwait(false);
                 
                 if (gamer is null)
                 {
-                    _logger.LogInformation("Gamer {Nickname} not found", nickname);
                     activity?.AddEvent(new ActivityEvent("Gamer not found", DateTimeOffset.Now,
                                                          new ActivityTagsCollection(new List<KeyValuePair<string,
                                                              object>>()
@@ -70,18 +67,16 @@ namespace LeaderboardWebAPI.Controllers
                                                      })));
 
                 // Find highest score for game
-                var score = await _context.Scores
-                   .Where(s => s.Game == game && s.Gamer == gamer)
+                var score = await context.Scores
+                   .Where(s => s.Game == game)
                    .OrderByDescending(s => s.Points)
                    .FirstOrDefaultAsync()
                    .ConfigureAwait(false);
 
                 if (score is null)
                 {
-                    _logger.LogInformation("Added score for {@Gamer} with {Points} for game {Game}", gamer, points,
-                                           game);
                     score = new Score { Gamer = gamer, Points = points, Game = game };
-                    await _context.Scores.AddAsync(score);
+                    await context.Scores.AddAsync(score);
                     activity?.AddEvent(new ActivityEvent("AddedScore", DateTimeOffset.Now, new ActivityTagsCollection
                     {
                         new("score", points)
@@ -96,14 +91,7 @@ namespace LeaderboardWebAPI.Controllers
                     score.Points = points;
                 }
 
-                // Application Insights tracing and metrics
-                //client.TrackEvent("NewHighScore");
-                //client.GetMetric("HighScore").TrackValue(points);
-
-                // .NET Diagnostics metrics
-                // RetroGamingEventSource.Log.NewHighScore(points);
-
-                _logger.LogInformation("New high score {Points}", points);
+                logger.LogInformation("New high score {Points}", points);
                 HighScoreMeter.AddHighScore(score.Game);
                 activity?.AddEvent(new ActivityEvent("NewHighScore", DateTimeOffset.Now, new ActivityTagsCollection
                 {
@@ -111,7 +99,7 @@ namespace LeaderboardWebAPI.Controllers
                     new("game", game)
                 }));
 
-                await _context.SaveChangesAsync().ConfigureAwait(false);
+                await context.SaveChangesAsync().ConfigureAwait(false);
                 return Ok();
             }
         }

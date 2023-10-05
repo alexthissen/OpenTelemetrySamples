@@ -18,13 +18,13 @@ namespace LeaderboardWebAPI.Controllers
     [Produces("application/xml", "application/json")]
     public class LeaderboardController : ControllerBase
     {
-        private readonly LeaderboardContext _context;
-        private readonly ILogger<LeaderboardController> _logger;
+        private readonly LeaderboardContext context;
+        private readonly ILogger<LeaderboardController> logger;
 
         public LeaderboardController(LeaderboardContext context, ILogger<LeaderboardController> logger)
         {
-            _context = context;
-            _logger = logger;
+            this.context = context;
+            this.logger = logger;
         }
 
         // GET api/leaderboard
@@ -40,13 +40,13 @@ namespace LeaderboardWebAPI.Controllers
             using var activity = Diagnostics.LeaderboardActivitySource.StartActivity("get_scores");
             
             activity?.SetTag("leaderboard.limit", limit);
-            _logger?.LogInformation("Retrieving score list with a limit of {SearchLimit}", limit);
+            logger?.LogInformation("Retrieving score list with a limit of {SearchLimit}", limit);
 
             AnalyzeLimit(limit);
 
             try
             {
-                var scores = _context.Scores
+                var scores = context.Scores
                    .Select(score => new HighScore()
                     {
                         Game = score.Game,
@@ -55,14 +55,15 @@ namespace LeaderboardWebAPI.Controllers
                     }).Take(limit);
                 
                 LeaderboardMeter.ScoreRetrieved();
-                // activity?.Stop();
+                
                 Activity.Current?.AddEvent(new ActivityEvent("Prepared LINQ statement", 
                 tags: new ActivityTagsCollection(
                     new List<KeyValuePair<string, object>>() { new("Test", 123) } )));return Ok(await scores.ToListAsync().ConfigureAwait(false));
             }
             catch (Exception ex)
             {
-                _logger!.LogError(ex, "Unknown exception occurred while retrieving high score list");
+                logger!.LogError(ex, "Unknown exception occurred while retrieving high score list");
+                
                 activity?.RecordException(ex);
                 activity?.SetStatus(ActivityStatusCode.Error);
             }
