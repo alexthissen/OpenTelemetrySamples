@@ -29,6 +29,6 @@ setInterval(() => {
 
 
 setInterval(() => {
-    let limit = Math.floor(Math.random() * 10);
+    let limit = Math.floor((Math.random() * 11) -1 );
     fetch(`${getUrl}?limit=${limit}`)
 }, 2000);

@@ -32,33 +32,23 @@ using OpenTelemetry.Metrics;
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 var resourceBuilder = ResourceBuilder.CreateDefault()
-    .AddService(serviceName:"leaderboard-web-api-service",
-                serviceNamespace: "techorama",
-                serviceVersion: "1.0",
-                autoGenerateServiceInstanceId: false,
-                serviceInstanceId: "leaderboardwebapi")
-    .AddAttributes(new List<KeyValuePair<string, object>>
-    {
-        new("app-version", "1.0"),
-        new("region", "west-europe")
-    })
-   .AddTelemetrySdk();
+                                     .AddService(serviceName: "leaderboard-web-api-service",
+                                          serviceNamespace: "techorama",
+                                          serviceVersion: "1.0",
+                                          autoGenerateServiceInstanceId: false,
+                                          serviceInstanceId: "leaderboardwebapi")
+                                     .AddAttributes(new List<KeyValuePair<string, object>>
+                                      {
+                                          new("app-version", "1.0"),
+                                          new("region", "west-europe")
+                                      })
+                                     .AddTelemetrySdk();
 
 builder.Host.UseApplicationMetadata("AmbientMetadata:Application");
 Activity.DefaultIdFormat = ActivityIdFormat.W3C;
 
 builder.Services.RegisterMetering();
 builder.Services.AddMetrics();
-
-builder.Services.AddLogging(logging => logging.AddOpenTelemetry(openTelemetryLoggerOptions =>
-{
-    openTelemetryLoggerOptions.SetResourceBuilder(resourceBuilder);
-    // Some important options to improve data quality
-    openTelemetryLoggerOptions.IncludeScopes = true;
-    openTelemetryLoggerOptions.IncludeFormattedMessage = true;
-    openTelemetryLoggerOptions.AddOtlpExporter();
-}));
-
 
 builder.Services.AddServiceLogEnricher(options =>
 {
@@ -70,46 +60,51 @@ builder.Services.AddServiceLogEnricher(options =>
 
 
 builder.Services
-    .AddOpenTelemetry()
-        .WithTracing(provider =>
+       .AddOpenTelemetry()
+       .WithTracing(tracing =>
         {
-            provider.AddSource(Diagnostics.LeaderboardActivitySource.Name);
-            provider.SetResourceBuilder(resourceBuilder);
-            provider.AddServiceTraceEnricher(options =>
+            tracing.AddSource(Diagnostics.LeaderboardActivitySource.Name);
+            tracing.SetResourceBuilder(resourceBuilder);
+            tracing.AddServiceTraceEnricher(options =>
             {
                 options.ApplicationName = true;
                 options.EnvironmentName = true;
                 options.BuildVersion = true;
                 options.DeploymentRing = true;
             });
-            provider.AddAspNetCoreInstrumentation();
-            provider.AddHttpClientInstrumentation();
-            provider.AddEntityFrameworkCoreInstrumentation(options =>
-            {
-                options.SetDbStatementForText = true;
-            } );
-           
-            // Exporters
-            provider.AddConsoleExporter(options => options.Targets = ConsoleExporterOutputTargets.Console);
-            provider.AddOtlpExporter();
-            
-            // provider.AddAzureMonitorTraceExporter(options =>
-            // {
-            //     options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
-            // });
-        })
-   .WithMetrics(metrics =>
-    {
-        metrics.AddMeter(LeaderboardMeter.MeterName, HighScoreMeter.MeterName);
-        metrics.AddOtlpExporter();
-        metrics.AddConsoleExporter();
-        metrics.AddHealthCheckMetrics();
-    });
+            tracing.AddAspNetCoreInstrumentation();
+            tracing.AddHttpClientInstrumentation();
+            tracing.AddEntityFrameworkCoreInstrumentation(options => { options.SetDbStatementForText = true; });
 
+            // Exporters
+            tracing.AddConsoleExporter(options => options.Targets = ConsoleExporterOutputTargets.Console);
+            tracing.AddOtlpExporter();
+        })
+       .WithMetrics(metrics =>
+        {
+            metrics.AddMeter(LeaderboardMeter.MeterName, HighScoreMeter.MeterName);
+            metrics.AddOtlpExporter();
+            metrics.AddConsoleExporter();
+            metrics.AddHealthCheckMetrics();
+        });
+
+
+builder.Logging.AddOpenTelemetry(openTelemetryLoggerOptions =>
+{
+    openTelemetryLoggerOptions.SetResourceBuilder(resourceBuilder);
+
+    // Some important options to improve data quality
+    openTelemetryLoggerOptions.IncludeScopes = true;
+    openTelemetryLoggerOptions.IncludeFormattedMessage = true;
+
+    // Exporters
+    openTelemetryLoggerOptions.AddOtlpExporter();
+});
 
 // Prepare health checks services
 IHealthChecksBuilder healthChecks = builder.Services.AddHealthChecks()
-   .AddCheck("Metrics", () => HealthCheckResult.Degraded("OK"), tags: new[] { "ready" });
+                                           .AddCheck("Metrics", () => HealthCheckResult.Degraded("OK"),
+                                                tags: new[] { "ready" });
 
 
 builder.Services.AddHealthMetrics();
@@ -132,8 +127,8 @@ if (!String.IsNullOrEmpty(builder.Configuration["KeyVaultUri"]))
         options =>
         {
             options
-            .AddSecret("ApplicationInsights--InstrumentationKey")
-            .AddKey("RetroKey");
+               .AddSecret("ApplicationInsights--InstrumentationKey")
+               .AddKey("RetroKey");
         }, name: "keyvault"
     );
 }
@@ -146,20 +141,18 @@ builder.Services.AddDbContext<LeaderboardContext>(options =>
     options.UseSqlServer(connectionString, sqlOptions =>
     {
         sqlOptions.EnableRetryOnFailure(
-        maxRetryCount: 5,
-        maxRetryDelay: TimeSpan.FromSeconds(30),
-        errorNumbersToAdd: null);
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(30),
+            errorNumbersToAdd: null);
     });
 });
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 healthChecks?.AddDbContextCheck<LeaderboardContext>("database", tags: new[] { "ready" });
 
-// Add log providers
-// builder.Logging.AddSeq("http://seq:5341");
 
-
-builder.Logging.AddSimpleConsole(options => {
+builder.Logging.AddSimpleConsole(options =>
+{
     // New since .NET 5
     options.ColorBehavior = LoggerColorBehavior.Disabled;
     options.IncludeScopes = true;
@@ -167,27 +160,24 @@ builder.Logging.AddSimpleConsole(options => {
 
 // Regular Web API services
 builder.Services
-    .AddControllers(options => {
-        options.RespectBrowserAcceptHeader = true;
-        options.ReturnHttpNotAcceptable = true;
-        options.FormatterMappings.SetMediaTypeMappingForFormat("json", new MediaTypeHeaderValue("application/json"));
-        options.FormatterMappings.SetMediaTypeMappingForFormat("xml", new MediaTypeHeaderValue("application/xml"));
-    })
-    .AddNewtonsoftJson(setup => {
-        setup.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
-    })
-   .AddXmlSerializerFormatters()
-    .AddControllersAsServices(); // For resolving controllers as services via DI
-
-// Instrumentation
-//builder.AddInstrumentation();
+       .AddControllers(options =>
+        {
+            options.RespectBrowserAcceptHeader = true;
+            options.ReturnHttpNotAcceptable = true;
+            options.FormatterMappings.SetMediaTypeMappingForFormat("json",
+                new MediaTypeHeaderValue("application/json"));
+            options.FormatterMappings.SetMediaTypeMappingForFormat("xml", new MediaTypeHeaderValue("application/xml"));
+        })
+       .AddNewtonsoftJson(setup => { setup.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore; })
+       .AddXmlSerializerFormatters()
+       .AddControllersAsServices(); // For resolving controllers as services via DI
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy",
-       builder => builder.AllowAnyOrigin()
-       .AllowAnyMethod()
-       .AllowAnyHeader()
+        builder => builder.AllowAnyOrigin()
+                          .AllowAnyMethod()
+                          .AllowAnyHeader()
     );
 });
 builder.Services.AddEndpointsApiExplorer();
@@ -231,12 +221,12 @@ if (app.Environment.IsDevelopment())
     {
         scope.ServiceProvider.GetRequiredService<LeaderboardContext>().Database.EnsureCreated();
     }
+
     //app.UseStatusCodePages();
     app.UseDeveloperExceptionPage();
-    app.UseSwagger(options => {
-        options.RouteTemplate = "openapi/{documentName}/openapi.json";
-    });
-    app.UseSwaggerUI(c => {
+    app.UseSwagger(options => { options.RouteTemplate = "openapi/{documentName}/openapi.json"; });
+    app.UseSwaggerUI(c =>
+    {
         c.SwaggerEndpoint("/openapi/v1.0/openapi.json", "LeaderboardWebAPI v1.0");
         c.RoutePrefix = "openapi";
     });

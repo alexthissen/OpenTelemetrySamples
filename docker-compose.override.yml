@@ -7,9 +7,8 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:80;http://+:8080
       - ASPNETCORE_MANAGEMENTPORT=8080
-      - ConnectionStrings__LeaderboardContext=Server=sql.data;Database=Leaderboard;User Id=sa;Password=Pass@word;Trusted_Connection=False;TrustServerCertificate=true
+      - ConnectionStrings__LeaderboardContext=Server=sql;Database=Leaderboard;User Id=sa;Password=Pass@word;Trusted_Connection=False;TrustServerCertificate=true
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
-      #- KeyVaultUri=https://conferencedemoskeyvault.vault.azure.net/
     ports:
       - 4972:80
       - 44369:443
@@ -40,6 +39,7 @@ services:
       - frontend
 
   sql.data:
+    container_name: sql
     image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
       - SA_PASSWORD=Pass@word
@@ -53,12 +53,12 @@ services:
           - sql.retrogaming.internal
 
   seq:
-    image: datalust/seq:latest
     container_name: seq
+    image: datalust/seq:latest
     environment: 
       - ACCEPT_EULA=Y
     ports:
-      - 5341:80
+      - "5341:80"
     networks:
       - backend
 
@@ -118,6 +118,7 @@ services:
       - frontend
 
   prometheus:
+    container_name: otel.prometheus 
     image: prom/prometheus:latest
     volumes:
       - ./config/prometheus-config.yaml:/etc/prometheus/prometheus.yml

@@ -6,9 +6,11 @@ namespace LeaderboardWebAPI.Metrics
     {
         private static Counter<int> _highScoreRetrievedCounter;
         private static readonly Meter Meter = new Meter(MeterName);
+
         static LeaderboardMeter()
         {
-            _highScoreRetrievedCounter = Meter.CreateCounter<int>("highscore.retrieved", "points", "Retrieved high scores");
+            _highScoreRetrievedCounter =
+                Meter.CreateCounter<int>("high_score.retrieved", "points", "Retrieved high scores");
             Meter.CreateCounter<int>("exceptionsOccured");
         }
 

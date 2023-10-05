@@ -11,14 +11,16 @@ namespace LeaderboardWebAPI.Metrics
         static HighScoreMeter()
         {
             var meter = new Meter(MeterName);
-           HighScoreCounter = meter.CreateCounter<int>("highscore.count", "points", "New high score");
-           ScoreHistogram = meter.CreateHistogram<int>("score", "points", "score");
+            HighScoreCounter = meter.CreateCounter<int>("high_score.count", "points", "New high score");
+            ScoreHistogram = meter.CreateHistogram<int>("score", "points", "New score");
         }
-        
-        public static string MeterName => "leaderboard.highscore";
 
-        public static void AddHighScore(string game) => HighScoreCounter.Add(1, new []{ new KeyValuePair<string, object>("game", game)});
+        public static string MeterName => "leaderboard.high_score";
 
-        public static void AddScore(int score, string game) => ScoreHistogram.Record(score, new [] { new KeyValuePair<string, object>("game", game) });
+        public static void AddHighScore(string game) =>
+            HighScoreCounter.Add(1, new[] { new KeyValuePair<string, object>("game", game) });
+
+        public static void AddScore(int score, string game) =>
+            ScoreHistogram.Record(score, new[] { new KeyValuePair<string, object>("game", game) });
     }
 }

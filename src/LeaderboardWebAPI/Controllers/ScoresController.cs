@@ -37,7 +37,7 @@ namespace LeaderboardWebAPI.Controllers
         [HttpPost("{nickname}/{game}")]
         public async Task<IActionResult> PostScore(string nickname, string game, [FromBody] int points)
         {
-            using (var activity = Diagnostics.LeaderboardActivitySource.StartActivity("PostScore"))
+            using (var activity = Diagnostics.LeaderboardActivitySource.StartActivity())
             {
                 activity?.SetTag("score.nickname", nickname);
                 activity?.SetTag("score.game", game);
@@ -45,49 +45,51 @@ namespace LeaderboardWebAPI.Controllers
 
                 // Lookup gamer based on nickname
                 Gamer gamer = await context.Gamers
-                   .FirstOrDefaultAsync(g => g.Nickname.ToLower() == nickname.ToLower())
-                   .ConfigureAwait(false);
-                
+                                           .FirstOrDefaultAsync(g => g.Nickname.ToLower() == nickname.ToLower())
+                                           .ConfigureAwait(false);
+
                 if (gamer is null)
                 {
                     activity?.AddEvent(new ActivityEvent("Gamer not found", DateTimeOffset.Now,
-                                                         new ActivityTagsCollection(new List<KeyValuePair<string,
-                                                             object>>()
-                                                         {
-                                                             new("gamer.nickname", nickname)
-                                                         })));
-                    
+                        new ActivityTagsCollection(new List<KeyValuePair<string,
+                            object>>()
+                        {
+                            new("gamer.nickname", nickname)
+                        })));
                     return NotFound();
                 }
 
                 activity?.AddEvent(new ActivityEvent("Gamer found", DateTimeOffset.Now,
-                                                     new ActivityTagsCollection(new List<KeyValuePair<string, object>>()
-                                                     {
-                                                         new("gamer.nickname", gamer.Nickname)
-                                                     })));
+                    new ActivityTagsCollection(new List<KeyValuePair<string, object>>()
+                    {
+                        new("gamer.nickname", gamer.Nickname),
+                        new("gamer.id", gamer.Id)
+                    })));
 
                 // Find highest score for game
                 var score = await context.Scores
-                   .Where(s => s.Game == game)
-                   .OrderByDescending(s => s.Points)
-                   .FirstOrDefaultAsync()
-                   .ConfigureAwait(false);
+                                         .Where(s => s.Game == game)
+                                         .OrderByDescending(s => s.Points)
+                                         .FirstOrDefaultAsync()
+                                         .ConfigureAwait(false);
 
                 if (score is null)
                 {
                     score = new Score { Gamer = gamer, Points = points, Game = game };
                     await context.Scores.AddAsync(score);
-                    activity?.AddEvent(new ActivityEvent("AddedScore", DateTimeOffset.Now, new ActivityTagsCollection
-                    {
-                        new("score", points)
-                    }));
+                    activity?.AddEvent(new ActivityEvent("AddedScore", DateTimeOffset.Now,
+                        new ActivityTagsCollection
+                        {
+                            new("score.points", points),
+                            new("game.name", gamer.Nickname)
+                        }));
                 }
                 else
                 {
                     HighScoreMeter.AddScore(points, score.Game);
                     if (score.Points > points)
                         return Ok();
-                    
+
                     score.Points = points;
                 }
 

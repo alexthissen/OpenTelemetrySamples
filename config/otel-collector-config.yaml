@@ -26,15 +26,6 @@ exporters:
   zipkin: 
     endpoint: http://zipkin:9411/api/v2/spans
     
-    
-  ####Signoz
-  
-  otlp/signoz:
-    endpoint: host.docker.internal:44317
-    tls:
-      insecure: true
-  
-
 extensions:
   health_check:
     endpoint: "0.0.0.0:13133"
@@ -55,13 +46,13 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [logging, zipkin, otlp/jaeger, azuremonitor, otlp/signoz]
+      exporters: [logging, zipkin, otlp/jaeger, azuremonitor]
       processors: [batch]
     metrics:
       receivers: [otlp]
-      exporters: [logging, prometheus, azuremonitor, otlp/signoz]
+      exporters: [logging, prometheus, azuremonitor]
       processors: [batch]
     logs:
       receivers: [otlp]
-      exporters: [logging, otlphttp/seq, azuremonitor, otlp/signoz]
+      exporters: [logging, otlphttp/seq, azuremonitor]
       processors: [batch]

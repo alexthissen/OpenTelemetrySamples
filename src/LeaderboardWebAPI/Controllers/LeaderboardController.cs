@@ -38,7 +38,7 @@ namespace LeaderboardWebAPI.Controllers
         public async Task<ActionResult<IEnumerable<HighScore>>> Get(int limit = 10)
         {
             using var activity = Diagnostics.LeaderboardActivitySource.StartActivity("get_scores");
-            
+
             activity?.SetTag("leaderboard.limit", limit);
             logger?.LogInformation("Retrieving score list with a limit of {SearchLimit}", limit);
 
@@ -47,27 +47,29 @@ namespace LeaderboardWebAPI.Controllers
             try
             {
                 var scores = context.Scores
-                   .Select(score => new HighScore()
-                    {
-                        Game = score.Game,
-                        Points = score.Points,
-                        Nickname = score.Gamer.Nickname
-                    }).Take(limit);
-                
+                                    .Select(score => new HighScore()
+                                     {
+                                         Game = score.Game,
+                                         Points = score.Points,
+                                         Nickname = score.Gamer.Nickname
+                                     }).Take(limit);
+
                 LeaderboardMeter.ScoreRetrieved();
-                
-                Activity.Current?.AddEvent(new ActivityEvent("Prepared LINQ statement", 
-                tags: new ActivityTagsCollection(
-                    new List<KeyValuePair<string, object>>() { new("Test", 123) } )));return Ok(await scores.ToListAsync().ConfigureAwait(false));
+
+                Activity.Current?.AddEvent(new ActivityEvent("Prepared LINQ statement",
+                    tags: new ActivityTagsCollection(
+                        new List<KeyValuePair<string, object>>() { new("Test", 123) })));
+
+                return Ok(await scores.ToListAsync().ConfigureAwait(false));
             }
             catch (Exception ex)
             {
                 logger!.LogError(ex, "Unknown exception occurred while retrieving high score list");
-                
+
                 activity?.RecordException(ex);
                 activity?.SetStatus(ActivityStatusCode.Error);
             }
-            
+
             return BadRequest();
         }
 
@@ -77,8 +79,7 @@ namespace LeaderboardWebAPI.Controllers
             do
             {
                 limit--;
-            }
-            while (limit != 0);
+            } while (limit != 0);
         }
     }
 }

@@ -14,7 +14,7 @@ namespace LeaderboardWebAPI
             {
                 HealthCheckMeter.HealthCheck(reportEntry.Key, reportEntry.Value.Status);
             }
-            
+
             HealthCheckMeter.HealthCheck("leaderboard.healthcheck", report.Status);
 
             return Task.CompletedTask;
@@ -28,15 +28,15 @@ namespace LeaderboardWebAPI
 
         private static int _status;
         private static string _reportName = "";
-        
+
         static HealthCheckMeter()
         {
             HealthCheckGauge =
-                Meter.CreateObservableGauge<int>("healthcheck.status", 
-                                                 () => new Measurement<int>(_status, new KeyValuePair<string, object>("report", _reportName)),
-                                                 "points", "Health check status");
+                Meter.CreateObservableGauge<int>("healthcheck.status",
+                    () => new Measurement<int>(_status, new KeyValuePair<string, object>("report", _reportName)),
+                    "points", "Health check status");
         }
-        
+
         public static string MeterName => "leaderboard.healthcheck";
 
         public static void HealthCheck(string reportEntryKey, HealthStatus healthStatus)

@@ -28,7 +28,6 @@ public class IndexModel(IOptionsSnapshot<LeaderboardApiOptions> options,
             Scores = await proxy.GetHighScores(limit).ConfigureAwait(false);
             
             activity?.AddEvent(new("HighScoresRetrieved"));
-            
             HighScoreMeter.HighScoreRetrieved();
             
             logger.LogInformation("retrieved {Count} high scores", Scores.Count());
@@ -41,13 +40,13 @@ public class IndexModel(IOptionsSnapshot<LeaderboardApiOptions> options,
         catch (TimeoutRejectedException ex)
         {
             logger.LogDebug(ex, "Timeout occurred when retrieving high score list");
+            
+            activity?.SetStatus(ActivityStatusCode.Error);
+            activity?.RecordException(ex);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Unknown exception occurred while retrieving high score list");
-            
-            activity?.SetStatus(ActivityStatusCode.Error);
-            activity?.RecordException(ex);
         }
     }
 }

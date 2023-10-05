@@ -2,16 +2,16 @@ using System.Diagnostics.Metrics;
 
 namespace GamingWebApp;
 
-public class HighScoreMeter
+public static class HighScoreMeter
 {
-    private static Counter<int>? _highScoreCounter;
-
-    public HighScoreMeter()
+    private static readonly Counter<int>? _highScoreCounter;
+    
+    static HighScoreMeter()
     {
         var meter = new Meter(Name);
-        _highScoreCounter = meter.CreateCounter<int>("highscore.retrieved.count", "points", "Retrieved high scores");
+        _highScoreCounter = meter.CreateCounter<int>("high_score.retrieved.count", "points", "Retrieved high scores");
     }
 
-    public static string Name => "gamingwebapp.highscore";
+    public static string Name => "gaming_webapp.high_score";
     public static void HighScoreRetrieved() => _highScoreCounter?.Add(1);
 }

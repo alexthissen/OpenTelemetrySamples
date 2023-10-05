@@ -28,47 +28,39 @@ builder.Services.AddRazorPages();
 
 var timeout = Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromMilliseconds(1500));
 var retry = HttpPolicyExtensions
-    .HandleTransientHttpError()
-    .Or<TimeoutRejectedException>()
-    .RetryAsync(3, onRetry: (exception, retryCount) =>
+   .HandleTransientHttpError()
+   .Or<TimeoutRejectedException>()
+   .RetryAsync(3, onRetry: (exception, retryCount) =>
     {
-        // TODO: Change to new trace event
-        // Trace.TraceInformation($"Retry #{retryCount}");
-        Activity.Current?.RecordException(exception.Exception, new TagList(){new KeyValuePair<string, object?>("retry-count", retryCount.ToString())});
+        Activity.Current?.RecordException(exception.Exception,
+                                          new TagList()
+                                          {
+                                              new KeyValuePair<string, object?>("retry-count", retryCount.ToString())
+                                          });
         Activity.Current?.SetStatus(Status.Error);
     });
 
 builder.Services.AddHttpClient("WebAPIs", options =>
-{
-    options.BaseAddress = new Uri(builder.Configuration["LeaderboardApiOptions:BaseUrl"]);
-    options.Timeout = TimeSpan.FromMilliseconds(15000);
-    options.DefaultRequestHeaders.Add("ClientFactory", "Check");
-})
-.AddPolicyHandler(retry.WrapAsync(timeout))
-.AddTypedClient(RestService.For<ILeaderboardClient>);
+    {
+        options.BaseAddress = new Uri(builder.Configuration["LeaderboardApiOptions:BaseUrl"]);
+        options.Timeout = TimeSpan.FromMilliseconds(15000);
+        options.DefaultRequestHeaders.Add("ClientFactory", "Check");
+    })
+   .AddPolicyHandler(retry.WrapAsync(timeout))
+   .AddTypedClient(RestService.For<ILeaderboardClient>);
 
 var resourceBuilder = ResourceBuilder.CreateDefault()
-   .AddService(serviceName:"gaming-web-app", 
-               serviceNamespace:"techorama", 
-               serviceVersion:"1.0.0", 
-               autoGenerateServiceInstanceId: false, 
+   .AddService(serviceName: "gaming-web-app",
+               serviceNamespace: "techorama",
+               serviceVersion: "1.0.0",
+               autoGenerateServiceInstanceId: false,
                serviceInstanceId: "gamingwebapp")
-    
-   .AddAttributes(new List<KeyValuePair<string, object>>() {
+   .AddAttributes(new List<KeyValuePair<string, object>>()
+    {
         new("app-version", "1.0"),
         new("region", "west-europe")
     })
    .AddDetector(new ContainerResourceDetector());
-
-builder.Logging.AddOpenTelemetry(options =>
-{
-    // Some important options to improve data quality
-    options.IncludeScopes = true;
-    options.IncludeFormattedMessage = true;
-    
-    options.SetResourceBuilder(resourceBuilder);
-    options.AddOtlpExporter();
-});
 
 builder.Host.UseApplicationMetadata("AmbientMetadata:Application");
 builder.Services.AddServiceLogEnricher(options =>
@@ -80,42 +72,42 @@ builder.Services.AddServiceLogEnricher(options =>
 });
 
 builder.Services
-    .AddOpenTelemetry()
-        .WithMetrics(provider => provider
-            .AddMeter(HighScoreMeter.Name)
-            .AddOtlpExporter()
-                        .AddMetering()
-            // .AddAzureMonitorMetricExporter(options =>
-            // {
-            //     options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
-            // })
-            )
-        .WithTracing(provider =>
+   .AddOpenTelemetry()
+   .WithTracing(tracing =>
+    {
+        tracing.AddSource(Diagnostics.GamingWebActivitySource.Name);
+        tracing.SetResourceBuilder(resourceBuilder);
+        tracing.AddServiceTraceEnricher(options =>
         {
-            //builder.SetErrorStatusOnException(true);
-            provider.AddSource(Diagnostics.GamingWebActivitySource.Name);
-            provider.SetResourceBuilder(resourceBuilder);
-            provider.AddServiceTraceEnricher(options =>
-            {
-                options.ApplicationName = true;
-                options.EnvironmentName = true;
-                options.BuildVersion = true;
-                options.DeploymentRing = true;
-            });
-            provider.AddHttpClientInstrumentation();
-            provider.AddAspNetCoreInstrumentation();
-            
-            provider.AddConsoleExporter(options => options.Targets = ConsoleExporterOutputTargets.Console);
-            provider.AddOtlpExporter();
-            //provider.AddZipkinExporter();
-           
-            // provider.AddAzureMonitorTraceExporter(options =>
-            // {
-            //     options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
-            // });
-            
+            options.ApplicationName = true;
+            options.EnvironmentName = true;
+            options.BuildVersion = true;
+            options.DeploymentRing = true;
         });
+        tracing.AddHttpClientInstrumentation();
+        tracing.AddAspNetCoreInstrumentation();
 
+        tracing.AddConsoleExporter(options => options.Targets = ConsoleExporterOutputTargets.Console);
+        tracing.AddOtlpExporter();
+    })
+   .WithMetrics(metrics =>
+    {
+        metrics.AddMeter(HighScoreMeter.Name);
+        metrics.AddOtlpExporter();
+        metrics.AddMetering();
+    });
+
+
+
+builder.Logging.AddOpenTelemetry(options =>
+{
+    // Some important options to improve data quality
+    options.IncludeScopes = true;
+    options.IncludeFormattedMessage = true;
+
+    options.SetResourceBuilder(resourceBuilder);
+    options.AddOtlpExporter();
+});
 
 var host = builder.Build();
 
