@@ -49,7 +49,6 @@ namespace LeaderboardWebAPI.Controllers
             _logger?.LogInformation("Retrieving score list with a limit of {SearchLimit}.", limit);
 
             AnalyzeLimit(limit);
-
             try
             {
                 var scores = context.Scores
@@ -61,13 +60,14 @@ namespace LeaderboardWebAPI.Controllers
                     }).Take(limit);
                 
                 LeaderboardMeter.ScoreRetrieved();
+
                 // activity?.Stop();
                 return Ok(await scores.ToListAsync().ConfigureAwait(false));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, ex.Message);
-                LeaderboardMeter.ExceptionOccured();
+                
                 activity?.RecordException(ex);
                 activity?.SetStatus(ActivityStatusCode.Error);
             }

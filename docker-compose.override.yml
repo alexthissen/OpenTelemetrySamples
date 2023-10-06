@@ -4,6 +4,7 @@ services:
   leaderboardwebapi:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - OTEL_DOTNET_AZURE_MONITOR_ENABLE_RESOURCE_METRICS=true
 #      - ASPNETCORE_URLS=https://+:443;http://+:80;http://+:8080
       - ASPNETCORE_URLS=http://+:80;http://+:8080
       - ASPNETCORE_MANAGEMENTPORT=8080
@@ -28,7 +29,7 @@ services:
 #      - ASPNETCORE_URLS=https://+:443;http://+:80
       - ASPNETCORE_URLS=http://+:80
 #      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx
-      - LeaderboardApiOptions__BaseUrl=http://leaderboardwebapis
+      - LeaderboardApiOptions__BaseUrl=http://leaderboardwebapi
     ports:
       - "5618:80"
       - "44325:443"

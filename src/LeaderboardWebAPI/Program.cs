@@ -27,35 +27,37 @@ using System.Diagnostics;
 using LeaderboardWebAPI.Metrics;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
+using OpenTelemetry;
+using Microsoft.Extensions.Diagnostics.Metrics;
+using Azure.Monitor.OpenTelemetry.Exporter;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 var resourceBuilder = ResourceBuilder.CreateDefault()
-    .AddService("leaderboard-web-api-service2")
+    .AddService("leaderboard-web-api-service", "techorama", "1.0.0-beta", false, "leaderboardwebapi")
     .AddAttributes(new List<KeyValuePair<string, object>>() {
         new("app-version", "1.0"),
-        new("service.name", "leaderboard-web-api2"),
-        new("service.namespace", "techorama"),
-        new("service.instance.id", "leaderboardwebapi2"),
         new("region", "west-europe")
-    })
-   .AddTelemetrySdk();
+    });
 
 builder.Host.UseApplicationMetadata("AmbientMetadata:Application");
 Activity.DefaultIdFormat = ActivityIdFormat.W3C;
 
 builder.Services.RegisterMetering();
-builder.Services.AddMetrics();
+builder.Services.AddMetrics(); // (config => config.AddDebugConsole());
 
-builder.Services.AddLogging(logging => logging.AddOpenTelemetry(openTelemetryLoggerOptions =>
+builder.Logging.AddOpenTelemetry(openTelemetryLoggerOptions =>
 {
     openTelemetryLoggerOptions.SetResourceBuilder(resourceBuilder);
     // Some important options to improve data quality
     openTelemetryLoggerOptions.IncludeScopes = true;
     openTelemetryLoggerOptions.IncludeFormattedMessage = true;
-    openTelemetryLoggerOptions.AddOtlpExporter();
+    openTelemetryLoggerOptions.AddOtlpExporter(options =>
+    {
+        options.Endpoint = new Uri("http://otel-collector:4318");
+        options.Protocol = OtlpExportProtocol.HttpProtobuf;
+    });
 }));
-
 
 builder.Services.AddServiceLogEnricher(options =>
 {
@@ -65,13 +67,11 @@ builder.Services.AddServiceLogEnricher(options =>
     options.DeploymentRing = true;
 });
 
-builder.Services.AddSingleton(new LeaderboardMeter());
-builder.Services.AddSingleton(new ScoreMeter());
-
 builder.Services
     .AddOpenTelemetry()
         .WithTracing(provider =>
         {
+            provider.SetErrorStatusOnException(true);
             provider.AddSource(Diagnostics.LeaderboardActivitySource.Name);
             provider.SetResourceBuilder(resourceBuilder);
             provider.AddServiceTraceEnricher(options =>
@@ -86,22 +86,42 @@ builder.Services
             provider.AddEntityFrameworkCoreInstrumentation(options =>
             {
                 options.SetDbStatementForText = true;
-            } );
-           
+            });
+
             // Exporters
             provider.AddConsoleExporter(options => options.Targets = ConsoleExporterOutputTargets.Console);
-            provider.AddOtlpExporter();
-            
+            provider.AddOtlpExporter(options =>
+            {
+                options.Endpoint = new Uri("http://otel-collector:4318");
+                options.Protocol = OtlpExportProtocol.HttpProtobuf;
+            });
             // provider.AddAzureMonitorTraceExporter(options =>
             // {
             //     options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
             // });
         })
-   .WithMetrics(metrics =>
+   .WithMetrics(provider =>
     {
-        metrics.AddMeter(LeaderboardMeter.MeterName, ScoreMeter.MeterName);
-        metrics.AddOtlpExporter();
-        metrics.AddConsoleExporter();
+        provider.AddMetering();
+        provider.SetResourceBuilder(resourceBuilder);
+        provider.AddMeter(LeaderboardMeter.MeterName, ScoreMeter.MeterName);
+        provider.AddOtlpExporter(options => {
+            options.Endpoint = new Uri("http://otel-collector:4318");
+            options.Protocol = OtlpExportProtocol.HttpProtobuf;
+        });
+#if EXPOSE_EXPERIMENTAL_FEATURES
+        provider.SetExemplarFilter(new TraceBasedExemplarFilter())
+#endif
+        provider.AddConsoleExporter();
+        provider.AddAzureMonitorMetricExporter(options =>
+        {
+            options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
+        });
+        provider.AddView("highscore",
+            new ExplicitBucketHistogramConfiguration { RecordMinMax = true, Boundaries = new double[] { 15, 30, 45, 60, 75 } }
+        );
+        //provider.AddRuntimeInstrumentation();
+        //provider.AddHttpClientInstrumentation();
     });
 
 // Read Azure Key Vault client details from mounted secret in Kubernetes
@@ -153,11 +173,11 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 // builder.Logging.AddSeq("http://seq:5341");
 
 
-builder.Logging.AddSimpleConsole(options => {
-    // New since .NET 5
-    options.ColorBehavior = LoggerColorBehavior.Disabled;
-    options.IncludeScopes = true;
-});
+//builder.Logging.AddSimpleConsole(options => {
+//    // New since .NET 5
+//    options.ColorBehavior = LoggerColorBehavior.Disabled;
+//    options.IncludeScopes = true;
+//});
 
 // Regular Web API services
 builder.Services

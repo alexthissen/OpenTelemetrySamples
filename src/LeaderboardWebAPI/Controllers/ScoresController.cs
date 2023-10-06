@@ -9,6 +9,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using LeaderboardWebAPI.Metrics;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics.Metrics;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace LeaderboardWebAPI.Controllers
 {
@@ -39,7 +41,6 @@ namespace LeaderboardWebAPI.Controllers
         {
             using (var activity = Diagnostics.LeaderboardActivitySource.StartActivity("PostScore"))
             {
-
                 _logger.LogInformation("adding score for {Nickname} in {Game}", nickname, game);
 
                 activity?.SetTag("score.nickname", nickname);
@@ -94,7 +95,7 @@ namespace LeaderboardWebAPI.Controllers
                 // RetroGamingEventSource.Log.NewHighScore(points);
 
                 _logger.LogInformation("New high score {Points}", points);
-                ScoreMeter.AddHighScore();
+                ScoreMeter.AddHighScore(points, game, nickname);
                 activity?.AddEvent(new ActivityEvent("NewHighScore", DateTimeOffset.Now, new ActivityTagsCollection()
                 {
                     new("score", points)

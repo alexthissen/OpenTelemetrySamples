@@ -1,3 +1,4 @@
+using Azure.Monitor.OpenTelemetry.Exporter;
 using GamingWebApp;
 using GamingWebApp.Proxy;
 using Microsoft.Extensions.Telemetry.Enrichment;
@@ -72,12 +73,11 @@ builder.Services
         .WithMetrics(provider => provider
             .AddMeter(HighScoreMeter.Name)
             .AddConsoleExporter()
-            .AddOtlpExporter()
-                     
-            // .AddAzureMonitorMetricExporter(options =>
-            // {
-            //     options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
-            // })
+            .AddOtlpExporter(options => options.Endpoint = new Uri("http://otel-collector:4318"))
+            .AddAzureMonitorMetricExporter(options =>
+            {
+                options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
+            })
                      )
         .WithTracing(provider =>
         {
@@ -94,7 +94,7 @@ builder.Services
             provider.AddAspNetCoreInstrumentation();
             provider.SetResourceBuilder(resourceBuilder);
             provider.AddConsoleExporter(options => options.Targets = ConsoleExporterOutputTargets.Console);
-            provider.AddOtlpExporter();
+            provider.AddOtlpExporter(options => options.Endpoint = new Uri("http://otel-collector:4318"));
             
             //provider.AddZipkinExporter();
            

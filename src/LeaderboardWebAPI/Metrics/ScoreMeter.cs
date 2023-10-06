@@ -1,23 +1,27 @@
+using System.Diagnostics;
 using System.Diagnostics.Metrics;
 
 namespace LeaderboardWebAPI.Metrics
 {
     public class ScoreMeter
     {
-        private static Counter<int> _highScoreCounter;
+        private static Histogram<int> highScoreHistogram;
 
-        public ScoreMeter()
+        static ScoreMeter()
         {
             var meter = new Meter(MeterName);
-           _highScoreCounter = meter.CreateCounter<int>("highscore", "points", "New high score");
-           
+            highScoreHistogram = meter.CreateHistogram<int>("highscore", "points", "New high score");
         }
-        
+
         public static string MeterName => "LeaderboardWebAPI.Score";
 
-        public static void AddHighScore()
+        public static void AddHighScore(int points, string game, string playerName)
         {
-            _highScoreCounter.Add(1);
+            TagList tags = new TagList();
+            tags.Add("game", game);
+            tags.Add("player_name", playerName);
+            highScoreHistogram.Record(points, new("game", game), new("player_name", playerName));
+            highScoreHistogram.Record(points, tags);
         }
     }
 }
