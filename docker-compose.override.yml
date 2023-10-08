@@ -62,18 +62,6 @@ services:
     networks:
       - backend
 
-  # healthcheckui:
-  #   image: xabarilcoding/healthchecksui:latest
-  #   environment:
-  #     - HealthChecksUI:HealthChecks:0:Name=Readiness checks
-  #     - HealthChecksUI:HealthChecks:0:Uri=http://leaderboardwebapi:8080/health/ready
-  #     - HealthChecksUI:HealthChecks:1:Name=Liveliness checks
-  #     - HealthChecksUI:HealthChecks:1:Uri=http://leaderboardwebapi:8080/health/lively
-  #   ports:
-  #     - 5000:80
-  #   networks:
-  #     - backend
-
   zipkin:
     image: ghcr.io/openzipkin/zipkin:latest
     container_name: zipkin

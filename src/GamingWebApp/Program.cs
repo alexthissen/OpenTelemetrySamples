@@ -33,10 +33,10 @@ var retry = HttpPolicyExtensions
    .RetryAsync(3, onRetry: (exception, retryCount) =>
     {
         Activity.Current?.RecordException(exception.Exception,
-                                          new TagList()
-                                          {
-                                              new KeyValuePair<string, object?>("retry-count", retryCount.ToString())
-                                          });
+            new TagList()
+            {
+                new KeyValuePair<string, object?>("retry-count", retryCount.ToString())
+            });
         Activity.Current?.SetStatus(Status.Error);
     });
 
@@ -92,12 +92,10 @@ builder.Services
     })
    .WithMetrics(metrics =>
     {
+        metrics.AddMetering(); // Set options for meters
         metrics.AddMeter(HighScoreMeter.Name);
         metrics.AddOtlpExporter();
-        metrics.AddMetering();
     });
-
-
 
 builder.Logging.AddOpenTelemetry(options =>
 {

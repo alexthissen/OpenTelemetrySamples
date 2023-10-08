@@ -13,7 +13,7 @@ namespace LeaderboardWebAPI.Infrastructure
             return services;
         }
         
-        public static MeterProviderBuilder AddHealthCheckMetrics(
+        public static MeterProviderBuilder AddHealthCheckMeter(
             this MeterProviderBuilder builder)
         {
             builder.AddMeter(HealthCheckMeter.MeterName);

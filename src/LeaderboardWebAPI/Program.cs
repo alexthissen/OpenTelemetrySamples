@@ -1,33 +1,29 @@
 using Azure.Extensions.AspNetCore.Configuration.Secrets;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
-using LeaderboardWebApi.Infrastructure;
 using LeaderboardWebAPI.Infrastructure;
+using LeaderboardWebAPI.Metrics;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AmbientMetadata;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Telemetry.Enrichment;
 using Microsoft.Extensions.Telemetry.Metering;
 using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using OpenTelemetry.Exporter;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using LeaderboardWebAPI.Metrics;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
-using OpenTelemetry.Logs;
-using OpenTelemetry.Metrics;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -50,6 +46,37 @@ Activity.DefaultIdFormat = ActivityIdFormat.W3C;
 builder.Services.RegisterMetering();
 builder.Services.AddMetrics();
 
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing =>
+    {
+        tracing.AddSource(Diagnostics.LeaderboardActivitySource.Name);
+        tracing.SetResourceBuilder(resourceBuilder);
+        tracing.AddServiceTraceEnricher(options =>
+        {
+            options.ApplicationName = true;
+            options.EnvironmentName = true;
+            options.BuildVersion = true;
+            options.DeploymentRing = true;
+        });
+        tracing.AddAspNetCoreInstrumentation();
+        tracing.AddHttpClientInstrumentation();
+        tracing.AddEntityFrameworkCoreInstrumentation(options => { options.SetDbStatementForText = true; });
+
+        // Exporters
+        tracing.AddConsoleExporter(options => options.Targets = ConsoleExporterOutputTargets.Console);
+        tracing.AddOtlpExporter();
+    })
+    .WithMetrics(metrics =>
+    {
+        metrics.AddMeter(LeaderboardMeter.MeterName, HighScoreMeter.MeterName);
+        metrics.AddHealthCheckMeter();
+        metrics.SetResourceBuilder(resourceBuilder);
+
+        // Exporters
+        metrics.AddOtlpExporter();
+        metrics.AddConsoleExporter();
+    });
+
 builder.Services.AddServiceLogEnricher(options =>
 {
     options.BuildVersion = true;
@@ -57,58 +84,28 @@ builder.Services.AddServiceLogEnricher(options =>
     options.EnvironmentName = true;
     options.DeploymentRing = true;
 });
-
-
-builder.Services
-       .AddOpenTelemetry()
-       .WithTracing(tracing =>
-        {
-            tracing.AddSource(Diagnostics.LeaderboardActivitySource.Name);
-            tracing.SetResourceBuilder(resourceBuilder);
-            tracing.AddServiceTraceEnricher(options =>
-            {
-                options.ApplicationName = true;
-                options.EnvironmentName = true;
-                options.BuildVersion = true;
-                options.DeploymentRing = true;
-            });
-            tracing.AddAspNetCoreInstrumentation();
-            tracing.AddHttpClientInstrumentation();
-            tracing.AddEntityFrameworkCoreInstrumentation(options => { options.SetDbStatementForText = true; });
-
-            // Exporters
-            tracing.AddConsoleExporter(options => options.Targets = ConsoleExporterOutputTargets.Console);
-            tracing.AddOtlpExporter();
-        })
-       .WithMetrics(metrics =>
-        {
-            metrics.AddMeter(LeaderboardMeter.MeterName, HighScoreMeter.MeterName);
-            metrics.AddOtlpExporter();
-            metrics.AddConsoleExporter();
-            metrics.AddHealthCheckMetrics();
-        });
-
-
-builder.Logging.AddOpenTelemetry(openTelemetryLoggerOptions =>
+builder.Logging.AddOpenTelemetry(options =>
 {
-    openTelemetryLoggerOptions.SetResourceBuilder(resourceBuilder);
+    options.SetResourceBuilder(resourceBuilder);
 
     // Some important options to improve data quality
-    openTelemetryLoggerOptions.IncludeScopes = true;
-    openTelemetryLoggerOptions.IncludeFormattedMessage = true;
+    options.IncludeScopes = true;
+    options.IncludeFormattedMessage = true;
 
     // Exporters
-    openTelemetryLoggerOptions.AddOtlpExporter();
+    options.AddOtlpExporter(exporter => {
+        exporter.Endpoint = new Uri("/ingest/otlp/v1/logs");
+        exporter.Protocol = OtlpExportProtocol.HttpProtobuf;
+    });
 });
 
 // Prepare health checks services
-IHealthChecksBuilder healthChecks = builder.Services.AddHealthChecks()
-                                           .AddCheck("Metrics", () => HealthCheckResult.Degraded("OK"),
-                                                tags: new[] { "ready" });
-
-
+IHealthChecksBuilder healthChecks = builder.Services.AddHealthChecks();
 builder.Services.AddHealthMetrics();
-
+builder.Services.Configure<HealthCheckPublisherOptions>(options =>
+{
+    options.Delay = TimeSpan.FromSeconds(60);
+});
 
 // Add configuration provider for Azure Key Vault
 if (!String.IsNullOrEmpty(builder.Configuration["KeyVaultUri"]))
@@ -146,17 +143,8 @@ builder.Services.AddDbContext<LeaderboardContext>(options =>
             errorNumbersToAdd: null);
     });
 });
-
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 healthChecks?.AddDbContextCheck<LeaderboardContext>("database", tags: new[] { "ready" });
-
-
-builder.Logging.AddSimpleConsole(options =>
-{
-    // New since .NET 5
-    options.ColorBehavior = LoggerColorBehavior.Disabled;
-    options.IncludeScopes = true;
-});
 
 // Regular Web API services
 builder.Services
@@ -175,54 +163,26 @@ builder.Services
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy",
-        builder => builder.AllowAnyOrigin()
-                          .AllowAnyMethod()
-                          .AllowAnyHeader()
+        builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
     );
 });
 builder.Services.AddEndpointsApiExplorer();
-
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1.0", new OpenApiInfo { Title = "Retro Videogames Leaderboard WebAPI", Version = "v1.0" });
 });
 
-builder.Services.Configure<ApiBehaviorOptions>(options =>
-{
-    options.InvalidModelStateResponseFactory = context =>
-    {
-        var problemDetails = new ValidationProblemDetails(context.ModelState)
-        {
-            Instance = context.HttpContext.Request.Path,
-            Status = StatusCodes.Status400BadRequest,
-            Type = "https://asp.net/core",
-            Detail = "Please refer to the errors property for additional details."
-        };
-        return new BadRequestObjectResult(problemDetails)
-        {
-            ContentTypes = { "application/problem+json", "application/problem+xml" }
-        };
-    };
-});
-
 WebApplication app = builder.Build();
-
 app.UseCors("CorsPolicy");
-
-// Health and telemetry
-app.MapInstrumentation();
 
 if (app.Environment.IsDevelopment())
 {
-    app.Logger.LogInformation("Logging from inside Program class");
-
     // ApplicationServices does not exist anymore
     using (var scope = app.Services.CreateScope())
     {
         scope.ServiceProvider.GetRequiredService<LeaderboardContext>().Database.EnsureCreated();
     }
 
-    //app.UseStatusCodePages();
     app.UseDeveloperExceptionPage();
     app.UseSwagger(options => { options.RouteTemplate = "openapi/{documentName}/openapi.json"; });
     app.UseSwaggerUI(c =>
