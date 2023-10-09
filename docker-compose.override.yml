@@ -14,8 +14,6 @@ services:
       - 44369:443
     depends_on:
       - sql.data
-#    volumes:
-#      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
     networks:
       - frontend
       - backend
@@ -33,8 +31,6 @@ services:
       - 44325:443
     depends_on:
       - leaderboardwebapi
-#    volumes:
-#      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
     networks:
       - frontend
 

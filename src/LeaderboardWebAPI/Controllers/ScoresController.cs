@@ -45,14 +45,13 @@ namespace LeaderboardWebAPI.Controllers
 
                 // Lookup gamer based on nickname
                 Gamer gamer = await context.Gamers
-                                           .FirstOrDefaultAsync(g => g.Nickname.ToLower() == nickname.ToLower())
-                                           .ConfigureAwait(false);
+                    .FirstOrDefaultAsync(g => g.Nickname.ToLower() == nickname.ToLower())
+                    .ConfigureAwait(false);
 
                 if (gamer is null)
                 {
                     activity?.AddEvent(new ActivityEvent("Gamer not found", DateTimeOffset.Now,
-                        new ActivityTagsCollection(new List<KeyValuePair<string,
-                            object>>()
+                        new ActivityTagsCollection(new List<KeyValuePair<string, object>>()
                         {
                             new("gamer.nickname", nickname)
                         })));
@@ -68,20 +67,22 @@ namespace LeaderboardWebAPI.Controllers
 
                 // Find highest score for game
                 var score = await context.Scores
-                                         .Where(s => s.Game == game)
-                                         .OrderByDescending(s => s.Points)
-                                         .FirstOrDefaultAsync()
-                                         .ConfigureAwait(false);
+                     .Where(s => s.Game == game)
+                     .OrderByDescending(s => s.Points)
+                     .FirstOrDefaultAsync()
+                     .ConfigureAwait(false);
 
                 if (score is null)
                 {
                     score = new Score { Gamer = gamer, Points = points, Game = game };
                     await context.Scores.AddAsync(score);
-                    activity?.AddEvent(new ActivityEvent("AddedScore", DateTimeOffset.Now,
+                    
+                    activity?.AddEvent(new ActivityEvent("added_score", DateTimeOffset.Now,
                         new ActivityTagsCollection
                         {
+                            new("gamer.name", gamer.Nickname),
                             new("score.points", points),
-                            new("game.name", gamer.Nickname)
+                            new("game.name", game)
                         }));
                 }
                 else

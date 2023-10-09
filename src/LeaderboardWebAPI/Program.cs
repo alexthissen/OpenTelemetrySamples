@@ -28,17 +28,16 @@ using System.Diagnostics;
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 var resourceBuilder = ResourceBuilder.CreateDefault()
-                                     .AddService(serviceName: "leaderboard-web-api-service",
-                                          serviceNamespace: "techorama",
-                                          serviceVersion: "1.0",
-                                          autoGenerateServiceInstanceId: false,
-                                          serviceInstanceId: "leaderboardwebapi")
-                                     .AddAttributes(new List<KeyValuePair<string, object>>
-                                      {
-                                          new("app-version", "1.0"),
-                                          new("region", "west-europe")
-                                      })
-                                     .AddTelemetrySdk();
+     .AddService(serviceName: "leaderboard-web-api-service",
+          serviceNamespace: "techorama",
+          serviceVersion: "1.0",
+          autoGenerateServiceInstanceId: false,
+          serviceInstanceId: "leaderboardwebapi")
+     .AddAttributes(new List<KeyValuePair<string, object>>
+      {
+          new("app-version", "1.0"),
+          new("region", "west-europe")
+      });
 
 builder.Host.UseApplicationMetadata("AmbientMetadata:Application");
 Activity.DefaultIdFormat = ActivityIdFormat.W3C;
@@ -73,8 +72,8 @@ builder.Services.AddOpenTelemetry()
         metrics.SetResourceBuilder(resourceBuilder);
 
         // Exporters
-        metrics.AddOtlpExporter();
         metrics.AddConsoleExporter();
+        metrics.AddOtlpExporter();
     });
 
 builder.Services.AddServiceLogEnricher(options =>
@@ -94,7 +93,7 @@ builder.Logging.AddOpenTelemetry(options =>
 
     // Exporters
     options.AddOtlpExporter(exporter => {
-        exporter.Endpoint = new Uri("/ingest/otlp/v1/logs");
+        exporter.Endpoint = new Uri("http://seq:5341/ingest/otlp/v1/logs");
         exporter.Protocol = OtlpExportProtocol.HttpProtobuf;
     });
 });

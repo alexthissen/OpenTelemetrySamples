@@ -30,9 +30,8 @@ public class IndexModel(IOptionsSnapshot<LeaderboardApiOptions> options,
             activity?.AddEvent(new("HighScoresRetrieved"));
             HighScoreMeter.HighScoreRetrieved();
             
-            logger.LogInformation("retrieved {Count} high scores", Scores.Count());
+            logger.LogInformation("Retrieved {Count} high scores", Scores.Count());
         }
-            
         catch (HttpRequestException ex)
         {
             logger.LogInformation(ex, "Http request failed");
@@ -41,8 +40,8 @@ public class IndexModel(IOptionsSnapshot<LeaderboardApiOptions> options,
         {
             logger.LogDebug(ex, "Timeout occurred when retrieving high score list");
             
-            activity?.SetStatus(ActivityStatusCode.Error);
             activity?.RecordException(ex);
+            activity?.SetStatus(ActivityStatusCode.Error);
         }
         catch (Exception ex)
         {
