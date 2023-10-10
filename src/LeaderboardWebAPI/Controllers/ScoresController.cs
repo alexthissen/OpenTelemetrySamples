@@ -95,7 +95,9 @@ namespace LeaderboardWebAPI.Controllers
                 }
 
                 logger.LogInformation("New high score {Points}", points);
-                HighScoreMeter.AddHighScore(score.Game);
+                
+                HighScoreMeter.NewHighScore(score.Game);
+                
                 activity?.AddEvent(new ActivityEvent("NewHighScore", DateTimeOffset.Now, new ActivityTagsCollection
                 {
                     new("score", points),

@@ -42,7 +42,7 @@ namespace LeaderboardWebAPI.Controllers
             activity?.SetTag("leaderboard.limit", limit);
             logger?.LogInformation("Retrieving score list with a limit of {SearchLimit}", limit);
 
-            AnalyzeLimit(limit);
+            await AnalyzeLimit(limit);
 
             try
             {
@@ -69,13 +69,18 @@ namespace LeaderboardWebAPI.Controllers
             return BadRequest();
         }
 
-        private void AnalyzeLimit(int limit)
+        private async Task AnalyzeLimit(int limit)
         {
-            // This is a demo bug, supposedly "hard" to find
-            do
+
+            if (limit == 1)
             {
-                limit--;
-            } while (limit != 0);
+                await Task.Delay(5000);
+            }
+            // This is a demo bug, supposedly "hard" to find
+            // do
+            // {
+            //     limit--;
+            // } while (limit != 0);
         }
     }
 }

@@ -58,15 +58,6 @@ services:
     networks:
       - backend
 
-  zipkin:
-    image: ghcr.io/openzipkin/zipkin:latest
-    container_name: zipkin
-    ports:
-      - 9411:9411
-    networks:
-      - frontend
-      - backend
-
   jaeger:
     image: jaegertracing/all-in-one:latest
     container_name: jaeger

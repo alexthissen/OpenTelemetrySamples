@@ -104,6 +104,9 @@ builder.Logging.AddOpenTelemetry(options =>
     options.IncludeFormattedMessage = true;
 
     options.SetResourceBuilder(resourceBuilder);
+
+
+    options.AddConsoleExporter();
     options.AddOtlpExporter();
 });
 

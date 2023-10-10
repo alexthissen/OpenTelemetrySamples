@@ -76,13 +76,6 @@ builder.Services.AddOpenTelemetry()
         metrics.AddOtlpExporter();
     });
 
-builder.Services.AddServiceLogEnricher(options =>
-{
-    options.BuildVersion = true;
-    options.ApplicationName = true;
-    options.EnvironmentName = true;
-    options.DeploymentRing = true;
-});
 builder.Logging.AddOpenTelemetry(options =>
 {
     options.SetResourceBuilder(resourceBuilder);
@@ -96,6 +89,14 @@ builder.Logging.AddOpenTelemetry(options =>
         exporter.Endpoint = new Uri("http://seq:5341/ingest/otlp/v1/logs");
         exporter.Protocol = OtlpExportProtocol.HttpProtobuf;
     });
+});
+
+builder.Services.AddServiceLogEnricher(options =>
+{
+    options.BuildVersion = true;
+    options.ApplicationName = true;
+    options.EnvironmentName = true;
+    options.DeploymentRing = true;
 });
 
 // Prepare health checks services

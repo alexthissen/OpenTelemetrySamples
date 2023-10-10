@@ -27,9 +27,9 @@ public class IndexModel(IOptionsSnapshot<LeaderboardApiOptions> options,
             // Using injected typed HTTP client instead of locally created proxy
             Scores = await proxy.GetHighScores(limit).ConfigureAwait(false);
             
-            activity?.AddEvent(new("HighScoresRetrieved"));
-            HighScoreMeter.HighScoreRetrieved();
+            activity?.AddEvent(new ActivityEvent("HighScoresRetrieved"));
             
+            HighScoreMeter.HighScoreRetrieved();
             logger.LogInformation("Retrieved {Count} high scores", Scores.Count());
         }
         catch (HttpRequestException ex)
@@ -38,7 +38,7 @@ public class IndexModel(IOptionsSnapshot<LeaderboardApiOptions> options,
         }
         catch (TimeoutRejectedException ex)
         {
-            logger.LogDebug(ex, "Timeout occurred when retrieving high score list");
+            logger.LogWarning(ex, "Timeout occurred when retrieving high score list");
             
             activity?.RecordException(ex);
             activity?.SetStatus(ActivityStatusCode.Error);

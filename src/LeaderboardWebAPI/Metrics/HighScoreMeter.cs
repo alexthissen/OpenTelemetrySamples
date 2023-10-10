@@ -17,7 +17,7 @@ namespace LeaderboardWebAPI.Metrics
 
         public static string MeterName => "leaderboard.high_score";
 
-        public static void AddHighScore(string game) =>
+        public static void NewHighScore(string game) =>
             HighScoreCounter.Add(1, new[] { new KeyValuePair<string, object>("game", game) });
 
         public static void AddScore(int score, string game) =>
