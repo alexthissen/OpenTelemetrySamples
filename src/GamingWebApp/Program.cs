@@ -3,8 +3,7 @@ using Azure.Monitor.OpenTelemetry.AspNetCore;
 using GamingWebApp;
 using GamingWebApp.Proxy;
 using Microsoft.Extensions.AmbientMetadata;
-using Microsoft.Extensions.Telemetry.Enrichment;
-using Microsoft.Extensions.Telemetry.Metering;
+using Microsoft.Extensions.Diagnostics.Enrichment;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
@@ -77,13 +76,13 @@ builder.Services
     {
         tracing.AddSource(Diagnostics.GamingWebActivitySource.Name);
         tracing.SetResourceBuilder(resourceBuilder);
-        tracing.AddServiceTraceEnricher(options =>
-        {
-            options.ApplicationName = true;
-            options.EnvironmentName = true;
-            options.BuildVersion = true;
-            options.DeploymentRing = true;
-        });
+        //tracing.AddServiceTraceEnricher(options =>
+        //{
+        //    options.ApplicationName = true;
+        //    options.EnvironmentName = true;
+        //    options.BuildVersion = true;
+        //    options.DeploymentRing = true;
+        //});
         tracing.AddHttpClientInstrumentation();
         tracing.AddAspNetCoreInstrumentation();
 
@@ -92,7 +91,6 @@ builder.Services
     })
    .WithMetrics(metrics =>
     {
-        metrics.AddMetering(); // Set options for meters
         metrics.AddMeter(HighScoreMeter.Name);
         metrics.AddOtlpExporter();
     });
@@ -104,7 +102,6 @@ builder.Logging.AddOpenTelemetry(options =>
     options.IncludeFormattedMessage = true;
 
     options.SetResourceBuilder(resourceBuilder);
-
 
     options.AddConsoleExporter();
     options.AddOtlpExporter();

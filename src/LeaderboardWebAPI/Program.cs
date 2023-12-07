@@ -11,8 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Telemetry.Enrichment;
-using Microsoft.Extensions.Telemetry.Metering;
+using Microsoft.Extensions.Diagnostics.Enrichment;
 using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
@@ -24,6 +23,7 @@ using OpenTelemetry.Trace;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Microsoft.Extensions.Diagnostics.Metrics;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -42,7 +42,7 @@ var resourceBuilder = ResourceBuilder.CreateDefault()
 builder.Host.UseApplicationMetadata("AmbientMetadata:Application");
 Activity.DefaultIdFormat = ActivityIdFormat.W3C;
 
-builder.Services.RegisterMetering();
+//builder.Services.RegisterMetrics();
 builder.Services.AddMetrics();
 
 builder.Services.AddOpenTelemetry()
@@ -50,13 +50,6 @@ builder.Services.AddOpenTelemetry()
     {
         tracing.AddSource(Diagnostics.LeaderboardActivitySource.Name);
         tracing.SetResourceBuilder(resourceBuilder);
-        tracing.AddServiceTraceEnricher(options =>
-        {
-            options.ApplicationName = true;
-            options.EnvironmentName = true;
-            options.BuildVersion = true;
-            options.DeploymentRing = true;
-        });
         tracing.AddAspNetCoreInstrumentation();
         tracing.AddHttpClientInstrumentation();
         tracing.AddEntityFrameworkCoreInstrumentation(options => { options.SetDbStatementForText = true; });
@@ -91,6 +84,7 @@ builder.Logging.AddOpenTelemetry(options =>
     });
 });
 
+builder.Services.AddProcessLogEnricher();
 builder.Services.AddServiceLogEnricher(options =>
 {
     options.BuildVersion = true;

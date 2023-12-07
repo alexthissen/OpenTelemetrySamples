@@ -17,7 +17,7 @@ exporters:
     endpoint: http://seq:5341/ingest/otlp/
     
   azuremonitor:
-    instrumentation_key: insert-instrumentation-key-here
+    instrumentation_key: 56980488-bf01-406c-bde1-607902d7b016
     spaneventsenabled: true
   
   prometheus:
@@ -44,7 +44,7 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [logging, zipkin, otlp/jaeger, azuremonitor]
+      exporters: [logging, otlp/jaeger, azuremonitor]
       processors: [batch]
     metrics:
       receivers: [otlp]
