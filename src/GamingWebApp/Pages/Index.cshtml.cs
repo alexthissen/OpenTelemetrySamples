@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using GamingWebApp.Proxy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -9,9 +10,10 @@ using Polly.Timeout;
 namespace GamingWebApp.Pages;
 
 public class IndexModel(IOptionsSnapshot<LeaderboardApiOptions> options,
-                        ILeaderboardClient proxy, 
-                        ILogger<IndexModel> logger, 
-                        IEnumerable<HighScore> scores) : PageModel
+    ILeaderboardClient proxy, 
+    ILogger<IndexModel> logger, 
+    IEnumerable<HighScore> scores,
+    HighScoreMeter highScoreMeter) : PageModel
 {
     private readonly IOptionsSnapshot<LeaderboardApiOptions> options = options;
 
@@ -27,9 +29,9 @@ public class IndexModel(IOptionsSnapshot<LeaderboardApiOptions> options,
             // Using injected typed HTTP client instead of locally created proxy
             Scores = await proxy.GetHighScores(limit).ConfigureAwait(false);
             
-            activity?.AddEvent(new ActivityEvent("HighScoresRetrieved"));
+            activity?.AddEvent(new ActivityEvent("HighScoresRetrieved", DateTimeOffset.Now));
             
-            HighScoreMeter.HighScoreRetrieved();
+            highScoreMeter.HighScoreRetrieved();
             logger.LogInformation("Retrieved {Count} high scores", Scores.Count());
         }
         catch (HttpRequestException ex)

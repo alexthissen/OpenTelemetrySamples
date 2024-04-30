@@ -29,7 +29,7 @@ var timeout = Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromMilliseconds
 var retry = HttpPolicyExtensions
    .HandleTransientHttpError()
    .Or<TimeoutRejectedException>()
-   .RetryAsync(3, onRetry: (exception, retryCount) =>
+   .RetryAsync(2, onRetry: (exception, retryCount) =>
     {
         Activity.Current?.RecordException(exception.Exception,
             new TagList()
@@ -50,7 +50,7 @@ builder.Services.AddHttpClient("WebAPIs", options =>
 
 var resourceBuilder = ResourceBuilder.CreateDefault()
    .AddService(serviceName: "gaming-web-app",
-               serviceNamespace: "techorama",
+               serviceNamespace: "observability-demo",
                serviceVersion: "1.0.0",
                autoGenerateServiceInstanceId: false,
                serviceInstanceId: "gamingwebapp")
@@ -62,6 +62,7 @@ var resourceBuilder = ResourceBuilder.CreateDefault()
    .AddDetector(new ContainerResourceDetector());
 
 builder.Host.UseApplicationMetadata("AmbientMetadata:Application");
+builder.Services.AddSingleton<HighScoreMeter>();
 builder.Services.AddServiceLogEnricher(options =>
 {
     options.BuildVersion = true;

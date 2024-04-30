@@ -19,11 +19,14 @@ namespace LeaderboardWebAPI.Controllers
     {
         private readonly LeaderboardContext context;
         private readonly ILogger<ScoresController> logger;
+        private readonly HighScoreMeter highScoreMeter;
 
-        public ScoresController(LeaderboardContext context, ILogger<ScoresController> logger)
+        public ScoresController(LeaderboardContext context, ILogger<ScoresController> logger,
+            HighScoreMeter highScoreMeter)
         {
             this.context = context;
             this.logger = logger;
+            this.highScoreMeter = highScoreMeter;
         }
 
         [HttpGet("{game}")]
@@ -87,7 +90,7 @@ namespace LeaderboardWebAPI.Controllers
                 }
                 else
                 {
-                    HighScoreMeter.AddScore(points, score.Game);
+                    highScoreMeter.AddScore(points, score.Game);
                     if (score.Points > points)
                         return Ok();
 
@@ -96,7 +99,7 @@ namespace LeaderboardWebAPI.Controllers
 
                 logger.LogInformation("New high score {Points}", points);
                 
-                HighScoreMeter.NewHighScore(score.Game);
+                highScoreMeter.NewHighScore(score.Game);
                 
                 activity?.AddEvent(new ActivityEvent("NewHighScore", DateTimeOffset.Now, new ActivityTagsCollection
                 {

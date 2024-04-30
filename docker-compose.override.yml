@@ -92,6 +92,17 @@ services:
       - backend
       - frontend
 
+  aspire-dashboard:
+    container_name: aspire-dashboard-demo
+    image: mcr.microsoft.com/dotnet/nightly/aspire-dashboard:latest
+    environment:
+      - DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS=true
+    ports:
+     - 18888:18888
+    networks:
+      - frontend
+      - backend
+
   prometheus:
     container_name: otel.prometheus 
     image: prom/prometheus:latest

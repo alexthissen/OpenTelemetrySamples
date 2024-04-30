@@ -1,11 +1,8 @@
-
 let gameList = ['Pac-man', 'Donkey Kong', 'Super Mario', 'Paperboy']
-let gamerList = ['LiekGeek', 'LX360', 'Techorama']
+let gamerList = ['LiekGeek', 'LX360', 'Observer']
 
 let url = 'http://localhost:4972/api/v1.0/Scores/'
-
 let getUrl = 'http://localhost:5618/'
-
 
 setInterval(() => {
     
@@ -26,7 +23,6 @@ setInterval(() => {
     })
     
 }, 5000);
-
 
 setInterval(() => {
     let limit = Math.floor((Math.random() * 11) -1 );

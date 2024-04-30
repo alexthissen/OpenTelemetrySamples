@@ -13,7 +13,7 @@ namespace LeaderboardWebAPI.Infrastructure
             builder.HasData(
                 new Gamer() { Id = 1, GamerGuid = Guid.NewGuid(), Nickname = "LX360" },
                 new Gamer() { Id = 2, GamerGuid = Guid.NewGuid(), Nickname = "LiekGeek" },
-                new Gamer() { Id = 3, GamerGuid = Guid.NewGuid(), Nickname = "Techorama" }
+                new Gamer() { Id = 3, GamerGuid = Guid.NewGuid(), Nickname = "Observer" }
             );
         }
     }

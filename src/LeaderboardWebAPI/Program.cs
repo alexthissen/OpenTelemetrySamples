@@ -29,7 +29,7 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 var resourceBuilder = ResourceBuilder.CreateDefault()
      .AddService(serviceName: "leaderboard-web-api-service",
-          serviceNamespace: "techorama",
+          serviceNamespace: "observability-demo",
           serviceVersion: "1.0",
           autoGenerateServiceInstanceId: false,
           serviceInstanceId: "leaderboardwebapi")
@@ -42,8 +42,8 @@ var resourceBuilder = ResourceBuilder.CreateDefault()
 builder.Host.UseApplicationMetadata("AmbientMetadata:Application");
 Activity.DefaultIdFormat = ActivityIdFormat.W3C;
 
-//builder.Services.RegisterMetrics();
 builder.Services.AddMetrics();
+builder.Services.AddSingleton<HighScoreMeter>();
 
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing =>
