@@ -17,7 +17,7 @@ exporters:
     endpoint: http://seq:5341/ingest/otlp/
     
   azuremonitor:
-    instrumentation_key: 56980488-bf01-406c-bde1-607902d7b016
+    instrumentation_key: yourapplicationinsightskey
     spaneventsenabled: true
   
   prometheus:
