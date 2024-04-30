@@ -23,7 +23,7 @@ services:
     environment:
       - OTEL_DOTNET_AUTO_CONTAINER_RESOURCE_DETECTOR_ENABLED=true
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:80;https://+:443
+      - ASPNETCORE_URLS=http://+:80
       - LeaderboardApiOptions__BaseUrl=http://leaderboardwebapi
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
     ports:
@@ -49,7 +49,7 @@ services:
           - sql.retrogaming.internal
 
   seq:
-    container_name: seq
+    container_name: seq-demo
     image: datalust/seq:latest
     environment: 
       - ACCEPT_EULA=Y
@@ -60,11 +60,22 @@ services:
 
   jaeger:
     image: jaegertracing/all-in-one:latest
-    container_name: jaeger
+    container_name: jaeger-demo
     environment:
       - COLLECTOR_OTLP_ENABLED=true 
     ports:
       - 16686:16686 
+    networks:
+      - frontend
+      - backend
+        
+  aspire-dashboard:
+    container_name: aspire-dashboard-demo
+    image: mcr.microsoft.com/dotnet/nightly/aspire-dashboard:latest
+    environment:
+      - DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS=true
+    ports:
+     - 18888:18888
     networks:
       - frontend
       - backend

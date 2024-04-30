@@ -17,13 +17,17 @@ exporters:
     endpoint: http://seq:5341/ingest/otlp/
     
   azuremonitor:
-    instrumentation_key: 56980488-bf01-406c-bde1-607902d7b016
+    connection_string: "insert key"
     spaneventsenabled: true
   
   prometheus:
     endpoint: 0.0.0.0:8889
   
-
+  otlp/aspire-dashboard:
+    endpoint: aspire-dashboard:18889
+    tls:
+      insecure: true
+  
 extensions:
   health_check:
     endpoint: "0.0.0.0:13133"
@@ -44,13 +48,13 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [logging, otlp/jaeger, azuremonitor]
+      exporters: [logging, otlp/jaeger, azuremonitor, otlp/aspire-dashboard]
       processors: [batch]
     metrics:
       receivers: [otlp]
-      exporters: [logging, prometheus, azuremonitor]
+      exporters: [logging, prometheus, azuremonitor, otlp/aspire-dashboard]
       processors: [batch]
     logs:
       receivers: [otlp]
-      exporters: [logging, otlphttp/seq, azuremonitor]
+      exporters: [logging, otlphttp/seq, azuremonitor, otlp/aspire-dashboard]
       processors: [batch]

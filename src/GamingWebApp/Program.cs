@@ -29,7 +29,7 @@ var timeout = Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromMilliseconds
 var retry = HttpPolicyExtensions
    .HandleTransientHttpError()
    .Or<TimeoutRejectedException>()
-   .RetryAsync(3, onRetry: (exception, retryCount) =>
+   .RetryAsync(5, onRetry: (exception, retryCount) =>
     {
         Activity.Current?.RecordException(exception.Exception,
             new TagList()
@@ -50,10 +50,13 @@ builder.Services.AddHttpClient("WebAPIs", options =>
 
 var resourceBuilder = ResourceBuilder.CreateDefault()
    .AddService(serviceName: "gaming-web-app",
-               serviceNamespace: "techorama",
-               serviceVersion: "1.0.0",
+               serviceNamespace: "net-synergy",
+               serviceVersion: "1.0.1",
                autoGenerateServiceInstanceId: false,
                serviceInstanceId: "gamingwebapp")
+    //can also be done by using environment variables:
+    
+    
    .AddAttributes(new List<KeyValuePair<string, object>>()
     {
         new("app-version", "1.0"),
@@ -62,6 +65,8 @@ var resourceBuilder = ResourceBuilder.CreateDefault()
    .AddDetector(new ContainerResourceDetector());
 
 builder.Host.UseApplicationMetadata("AmbientMetadata:Application");
+
+builder.Services.AddSingleton<HighScoreMeter>();
 builder.Services.AddServiceLogEnricher(options =>
 {
     options.BuildVersion = true;
@@ -76,18 +81,12 @@ builder.Services
     {
         tracing.AddSource(Diagnostics.GamingWebActivitySource.Name);
         tracing.SetResourceBuilder(resourceBuilder);
-        //tracing.AddServiceTraceEnricher(options =>
-        //{
-        //    options.ApplicationName = true;
-        //    options.EnvironmentName = true;
-        //    options.BuildVersion = true;
-        //    options.DeploymentRing = true;
-        //});
         tracing.AddHttpClientInstrumentation();
         tracing.AddAspNetCoreInstrumentation();
 
         tracing.AddConsoleExporter(options => options.Targets = ConsoleExporterOutputTargets.Console);
         tracing.AddOtlpExporter();
+        //tracing.AddZipkinExporter();
     })
    .WithMetrics(metrics =>
     {

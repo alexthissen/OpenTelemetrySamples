@@ -1,6 +1,6 @@
 
-let gameList = ['Pac-man', 'Donkey Kong', 'Super Mario', 'Paperboy']
-let gamerList = ['LiekGeek', 'LX360', 'Techorama']
+let gameList = ['Pac-man', 'Donkey Kong', 'Super Mario', 'Mario Kart']
+let gamerList = ['LiekGeek', 'LX360', 'Synergy']
 
 let url = 'http://localhost:4972/api/v1.0/Scores/'
 

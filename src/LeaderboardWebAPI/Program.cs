@@ -5,13 +5,11 @@ using LeaderboardWebAPI.Infrastructure;
 using LeaderboardWebAPI.Metrics;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.AmbientMetadata;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Diagnostics.Enrichment;
 using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
@@ -23,28 +21,26 @@ using OpenTelemetry.Trace;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Microsoft.Extensions.Diagnostics.Metrics;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 var resourceBuilder = ResourceBuilder.CreateDefault()
-     .AddService(serviceName: "leaderboard-web-api-service",
-          serviceNamespace: "techorama",
-          serviceVersion: "1.0",
-          autoGenerateServiceInstanceId: false,
-          serviceInstanceId: "leaderboardwebapi")
-     .AddAttributes(new List<KeyValuePair<string, object>>
-      {
-          new("app-version", "1.0"),
-          new("region", "west-europe")
-      });
+    .AddService(serviceName: "leaderboard-web-api-service",
+         serviceNamespace: "net-synergy",
+         serviceVersion: "1.0",
+         autoGenerateServiceInstanceId: false,
+         serviceInstanceId: "leaderboardwebapi")
+    .AddAttributes(new List<KeyValuePair<string, object>>
+     {
+         new("app-version", "1.0"),
+         new("region", "west-europe")
+     });
 
 builder.Host.UseApplicationMetadata("AmbientMetadata:Application");
 Activity.DefaultIdFormat = ActivityIdFormat.W3C;
 
-//builder.Services.RegisterMetrics();
 builder.Services.AddMetrics();
-
+builder.Services.AddSingleton<HighScoreMeter>();
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing =>
     {

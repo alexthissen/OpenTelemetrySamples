@@ -4,8 +4,16 @@
     ViewData["Title"] = "Home page";
 }
 <h1>All Time Highscore Hall of Fame</h1>
-
-@foreach (var score in Model.Scores)
-{
-    <div class="enjoy-css">@score.Game:  @score.Points - @score.Nickname</div>
+@{
+    if (!Model.Scores.Any())
+    {
+        <p>No scores yet</p>
+    }
+    else
+    {
+        @foreach (var score in Model.Scores)
+        {
+            <div class="enjoy-css">@score.Game: @score.Points - @score.Nickname</div>
+        }
+    }
 }
