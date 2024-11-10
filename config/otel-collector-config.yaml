@@ -2,11 +2,13 @@ receivers:
   otlp:
     protocols:
       grpc:
+        endpoint: 0.0.0.0:4317
       http:
+        endpoint: 0.0.0.0:4318
 
 exporters:
-  logging:
-    verbosity: detailed
+  # logging:
+  #   verbosity: detailed
     
   otlp/jaeger:
     endpoint: jaeger:4317
@@ -17,7 +19,7 @@ exporters:
     endpoint: http://seq:5341/ingest/otlp/
     
   azuremonitor:
-    instrumentation_key: <your-applicationinsights-key>
+    instrumentation_key: 5493a753-93a2-4c1b-85ae-6a3f997f42e6
     spaneventsenabled: true
   
   prometheus:
@@ -48,13 +50,13 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [logging, otlp/jaeger, azuremonitor, otlp/aspire-dashboard]
+      exporters: [otlp/jaeger, azuremonitor, otlp/aspire-dashboard]
       processors: [batch]
     metrics:
       receivers: [otlp]
-      exporters: [logging, prometheus, azuremonitor, otlp/aspire-dashboard]
+      exporters: [prometheus, azuremonitor, otlp/aspire-dashboard]
       processors: [batch]
     logs:
       receivers: [otlp]
-      exporters: [logging, otlphttp/seq, azuremonitor, otlp/aspire-dashboard]
+      exporters: [otlphttp/seq, azuremonitor, otlp/aspire-dashboard]
       processors: [batch]
