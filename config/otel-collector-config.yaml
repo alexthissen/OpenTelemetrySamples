@@ -17,10 +17,12 @@ exporters:
       
   otlphttp/seq:
     endpoint: http://seq:5341/ingest/otlp/
-    
+  
   azuremonitor:
-    instrumentation_key: 5493a753-93a2-4c1b-85ae-6a3f997f42e6
+    connection_string: InstrumentationKey=
     spaneventsenabled: true
+    maxbatchsize: 100
+    maxbatchinterval: 10s
   
   prometheus:
     endpoint: 0.0.0.0:8889

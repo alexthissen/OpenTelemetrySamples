@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.Extensions.Diagnostics.Metrics;
+using Azure.Monitor.OpenTelemetry.Exporter;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -46,7 +47,7 @@ builder.Services.AddMetrics();
 builder.Services.AddSingleton<HighScoreMeter>();
 
 builder.Services.AddOpenTelemetry()
-    .WithTracing(tracing =>
+    .WithTracing(tracing => 
     {
         tracing.AddSource(Diagnostics.LeaderboardActivitySource.Name);
         tracing.SetResourceBuilder(resourceBuilder);
@@ -67,125 +68,130 @@ builder.Services.AddOpenTelemetry()
         // Exporters
         metrics.AddConsoleExporter();
         metrics.AddOtlpExporter();
+        //metrics.AddAzureMonitorMetricExporter(options =>
+        //{
+        //    options.ConnectionString = "<instrumentation-connectionstring>";
+        //});
     });
 
-builder.Logging.AddOpenTelemetry(options =>
-{
-    options.SetResourceBuilder(resourceBuilder);
-
-    // Some important options to improve data quality
-    options.IncludeScopes = true;
-    options.IncludeFormattedMessage = true;
-
-    // Exporters
-    options.AddOtlpExporter(exporter => {
-        exporter.Endpoint = new Uri("http://seq:5341/ingest/otlp/v1/logs");
-        exporter.Protocol = OtlpExportProtocol.HttpProtobuf;
-    });
-});
-
-builder.Services.AddProcessLogEnricher();
-builder.Services.AddServiceLogEnricher(options =>
-{
-    options.BuildVersion = true;
-    options.ApplicationName = true;
-    options.EnvironmentName = true;
-    options.DeploymentRing = true;
-});
-
-// Prepare health checks services
-IHealthChecksBuilder healthChecks = builder.Services.AddHealthChecks();
-builder.Services.AddHealthMetrics();
-builder.Services.Configure<HealthCheckPublisherOptions>(options =>
-{
-    options.Delay = TimeSpan.FromSeconds(60);
-});
-
-// Add configuration provider for Azure Key Vault
-if (!String.IsNullOrEmpty(builder.Configuration["KeyVaultUri"]))
-{
-    Uri keyVaultUri = new Uri(builder.Configuration["KeyVaultUri"]);
-    ClientSecretCredential credential = new(
-        builder.Configuration["KeyVaultTenantID"],
-        builder.Configuration["KeyVaultClientID"],
-        builder.Configuration["KeyVaultClientSecret"]);
-    // For managed identities use:
-    //   new DefaultAzureCredential()
-    var secretClient = new SecretClient(keyVaultUri, credential);
-    builder.Configuration.AddAzureKeyVault(secretClient, new KeyVaultSecretManager());
-
-    healthChecks?.AddAzureKeyVault(keyVaultUri, credential,
-        options =>
-        {
-            options
-               .AddSecret("ApplicationInsights--InstrumentationKey")
-               .AddKey("RetroKey");
-        }, name: "keyvault"
-    );
-}
-
-// Database 
-builder.Services.AddDbContext<LeaderboardContext>(options =>
-{
-    string connectionString =
-        builder.Configuration.GetConnectionString("LeaderboardContext");
-    options.UseSqlServer(connectionString, sqlOptions =>
+    builder.Logging.AddOpenTelemetry(options =>
     {
-        sqlOptions.EnableRetryOnFailure(
-            maxRetryCount: 5,
-            maxRetryDelay: TimeSpan.FromSeconds(30),
-            errorNumbersToAdd: null);
-    });
-});
-builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-healthChecks?.AddDbContextCheck<LeaderboardContext>("database", tags: new[] { "ready" });
+        options.SetResourceBuilder(resourceBuilder);
 
-// Regular Web API services
-builder.Services
-       .AddControllers(options =>
+        // Some important options to improve data quality
+        options.IncludeScopes = true;
+        options.IncludeFormattedMessage = true;
+
+        // Exporters
+        options.AddOtlpExporter(exporter =>
         {
-            options.RespectBrowserAcceptHeader = true;
-            options.ReturnHttpNotAcceptable = true;
-            options.FormatterMappings.SetMediaTypeMappingForFormat("json",
-                new MediaTypeHeaderValue("application/json"));
-            options.FormatterMappings.SetMediaTypeMappingForFormat("xml", new MediaTypeHeaderValue("application/xml"));
-        })
-       .AddNewtonsoftJson(setup => { setup.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore; })
-       .AddXmlSerializerFormatters()
-       .AddControllersAsServices(); // For resolving controllers as services via DI
+            exporter.Endpoint = new Uri("http://seq:5341/ingest/otlp/v1/logs");
+            exporter.Protocol = OtlpExportProtocol.HttpProtobuf;
+        });
+    });
 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("CorsPolicy",
-        builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
-    );
-});
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1.0", new OpenApiInfo { Title = "Retro Videogames Leaderboard WebAPI", Version = "v1.0" });
-});
-
-WebApplication app = builder.Build();
-app.UseCors("CorsPolicy");
-
-if (app.Environment.IsDevelopment())
-{
-    // ApplicationServices does not exist anymore
-    using (var scope = app.Services.CreateScope())
+    builder.Services.AddProcessLogEnricher();
+    builder.Services.AddServiceLogEnricher(options =>
     {
-        scope.ServiceProvider.GetRequiredService<LeaderboardContext>().Database.EnsureCreated();
+        options.BuildVersion = true;
+        options.ApplicationName = true;
+        options.EnvironmentName = true;
+        options.DeploymentRing = true;
+    });
+
+    // Prepare health checks services
+    IHealthChecksBuilder healthChecks = builder.Services.AddHealthChecks();
+    builder.Services.AddHealthMetrics();
+    builder.Services.Configure<HealthCheckPublisherOptions>(options =>
+    {
+        options.Delay = TimeSpan.FromSeconds(60);
+    });
+
+    // Add configuration provider for Azure Key Vault
+    if (!String.IsNullOrEmpty(builder.Configuration["KeyVaultUri"]))
+    {
+        Uri keyVaultUri = new Uri(builder.Configuration["KeyVaultUri"]);
+        ClientSecretCredential credential = new(
+            builder.Configuration["KeyVaultTenantID"],
+            builder.Configuration["KeyVaultClientID"],
+            builder.Configuration["KeyVaultClientSecret"]);
+        // For managed identities use:
+        //   new DefaultAzureCredential()
+        var secretClient = new SecretClient(keyVaultUri, credential);
+        builder.Configuration.AddAzureKeyVault(secretClient, new KeyVaultSecretManager());
+
+        healthChecks?.AddAzureKeyVault(keyVaultUri, credential,
+            options =>
+            {
+                options
+                   .AddSecret("ApplicationInsights--InstrumentationKey")
+                   .AddKey("RetroKey");
+            }, name: "keyvault"
+        );
     }
 
-    app.UseDeveloperExceptionPage();
-    app.UseSwagger(options => { options.RouteTemplate = "openapi/{documentName}/openapi.json"; });
-    app.UseSwaggerUI(c =>
+    // Database 
+    builder.Services.AddDbContext<LeaderboardContext>(options =>
     {
-        c.SwaggerEndpoint("/openapi/v1.0/openapi.json", "LeaderboardWebAPI v1.0");
-        c.RoutePrefix = "openapi";
+        string connectionString =
+            builder.Configuration.GetConnectionString("LeaderboardContext");
+        options.UseSqlServer(connectionString, sqlOptions =>
+        {
+            sqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(30),
+                errorNumbersToAdd: null);
+        });
     });
-}
+    builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+    healthChecks?.AddDbContextCheck<LeaderboardContext>("database", tags: new[] { "ready" });
 
-app.UseAuthorization();
-app.MapControllers();
-app.Run();
+    // Regular Web API services
+    builder.Services
+           .AddControllers(options =>
+            {
+                options.RespectBrowserAcceptHeader = true;
+                options.ReturnHttpNotAcceptable = true;
+                options.FormatterMappings.SetMediaTypeMappingForFormat("json",
+                    new MediaTypeHeaderValue("application/json"));
+                options.FormatterMappings.SetMediaTypeMappingForFormat("xml", new MediaTypeHeaderValue("application/xml"));
+            })
+           .AddNewtonsoftJson(setup => { setup.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore; })
+           .AddXmlSerializerFormatters()
+           .AddControllersAsServices(); // For resolving controllers as services via DI
+
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("CorsPolicy",
+            builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
+        );
+    });
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen(c =>
+    {
+        c.SwaggerDoc("v1.0", new OpenApiInfo { Title = "Retro Videogames Leaderboard WebAPI", Version = "v1.0" });
+    });
+
+    WebApplication app = builder.Build();
+    app.UseCors("CorsPolicy");
+
+    if (app.Environment.IsDevelopment())
+    {
+        // ApplicationServices does not exist anymore
+        using (var scope = app.Services.CreateScope())
+        {
+            scope.ServiceProvider.GetRequiredService<LeaderboardContext>().Database.EnsureCreated();
+        }
+
+        app.UseDeveloperExceptionPage();
+        app.UseSwagger(options => { options.RouteTemplate = "openapi/{documentName}/openapi.json"; });
+        app.UseSwaggerUI(c =>
+        {
+            c.SwaggerEndpoint("/openapi/v1.0/openapi.json", "LeaderboardWebAPI v1.0");
+            c.RoutePrefix = "openapi";
+        });
+    }
+
+    app.UseAuthorization();
+    app.MapControllers();
+    app.Run();

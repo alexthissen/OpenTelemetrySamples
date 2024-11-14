@@ -7,6 +7,6 @@ namespace GamingWebApp
 {
     public class LeaderboardApiOptions
     {
-        public string BaseUrl { get; set; }
+        public string BaseUrl { get; set; } = String.Empty;
     }
 }

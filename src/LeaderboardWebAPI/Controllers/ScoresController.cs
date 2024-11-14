@@ -95,6 +95,7 @@ namespace LeaderboardWebAPI.Controllers
                         return Ok();
 
                     score.Points = points;
+                    score.Gamer = gamer;
                 }
 
                 logger.LogInformation("New high score {Points}", points);

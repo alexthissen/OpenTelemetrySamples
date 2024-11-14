@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
+using Azure.Monitor.OpenTelemetry.Exporter;
 using GamingWebApp;
 using GamingWebApp.Proxy;
 using Microsoft.Extensions.AmbientMetadata;
