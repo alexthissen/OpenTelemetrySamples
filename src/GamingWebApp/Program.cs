@@ -5,6 +5,7 @@ using GamingWebApp;
 using GamingWebApp.Proxy;
 using Microsoft.Extensions.AmbientMetadata;
 using Microsoft.Extensions.Diagnostics.Enrichment;
+using Microsoft.Extensions.Options;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
@@ -95,19 +96,13 @@ builder.Services
     {
         metrics.AddMeter(HighScoreMeter.Name);
         metrics.AddOtlpExporter();
-    });
-
-builder.Logging.AddOpenTelemetry(options =>
-{
-    // Some important options to improve data quality
-    options.IncludeScopes = true;
-    options.IncludeFormattedMessage = true;
-
-    options.SetResourceBuilder(resourceBuilder);
-
-    options.AddConsoleExporter();
-    options.AddOtlpExporter();
-});
+    })
+   .WithLogging(logging =>
+   {
+       logging.SetResourceBuilder(resourceBuilder);
+       logging.AddConsoleExporter();
+       logging.AddOtlpExporter();
+   });
 
 var host = builder.Build();
 

@@ -68,10 +68,6 @@ builder.Services.AddOpenTelemetry()
         // Exporters
         metrics.AddConsoleExporter();
         metrics.AddOtlpExporter();
-        //metrics.AddAzureMonitorMetricExporter(options =>
-        //{
-        //    options.ConnectionString = "<instrumentation-connectionstring>";
-        //});
     });
 
     builder.Logging.AddOpenTelemetry(options =>

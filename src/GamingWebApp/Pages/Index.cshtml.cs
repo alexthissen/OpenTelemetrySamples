@@ -12,12 +12,11 @@ namespace GamingWebApp.Pages;
 public class IndexModel(IOptionsSnapshot<LeaderboardApiOptions> options,
     ILeaderboardClient proxy, 
     ILogger<IndexModel> logger, 
-    IEnumerable<HighScore> scores,
     HighScoreMeter highScoreMeter) : PageModel
 {
     private readonly IOptionsSnapshot<LeaderboardApiOptions> options = options;
 
-    public IEnumerable<HighScore> Scores { get; private set; } = scores;
+    public IEnumerable<HighScore> Scores { get; private set; }
 
     public async Task OnGetAsync([FromQuery] int limit = 10)
     {

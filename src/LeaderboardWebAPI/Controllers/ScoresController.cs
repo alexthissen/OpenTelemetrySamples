@@ -61,7 +61,7 @@ namespace LeaderboardWebAPI.Controllers
                     return NotFound();
                 }
 
-                activity?.AddEvent(new ActivityEvent("Gamer found", DateTimeOffset.Now,
+                activity?.AddEvent(new ActivityEvent("GamerFound", DateTimeOffset.Now,
                     new ActivityTagsCollection(new List<KeyValuePair<string, object>>()
                     {
                         new("gamer.nickname", gamer.Nickname),
@@ -80,7 +80,7 @@ namespace LeaderboardWebAPI.Controllers
                     score = new Score { Gamer = gamer, Points = points, Game = game };
                     await context.Scores.AddAsync(score);
                     
-                    activity?.AddEvent(new ActivityEvent("added_score", DateTimeOffset.Now,
+                    activity?.AddEvent(new ActivityEvent("AddedScore", DateTimeOffset.Now,
                         new ActivityTagsCollection
                         {
                             new("gamer.name", gamer.Nickname),
