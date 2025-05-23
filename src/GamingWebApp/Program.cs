@@ -9,7 +9,6 @@ using Microsoft.Extensions.Options;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
-using OpenTelemetry.ResourceDetectors.Container;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Polly;
@@ -33,12 +32,12 @@ var retry = HttpPolicyExtensions
    .Or<TimeoutRejectedException>()
    .RetryAsync(2, onRetry: (exception, retryCount) =>
     {
-        Activity.Current?.RecordException(exception.Exception,
+        Activity.Current?.AddException(exception.Exception,
             new TagList()
             {
                 new KeyValuePair<string, object?>("retry-count", retryCount.ToString())
             });
-        Activity.Current?.SetStatus(Status.Error);
+        Activity.Current?.SetStatus(ActivityStatusCode.Error);
     });
 
 builder.Services.AddHttpClient("WebAPIs", options =>
@@ -61,7 +60,7 @@ var resourceBuilder = ResourceBuilder.CreateDefault()
         new("app-version", "1.0"),
         new("region", "west-europe")
     })
-   .AddDetector(new ContainerResourceDetector());
+   .AddContainerDetector();
 
 builder.Host.UseApplicationMetadata("AmbientMetadata:Application");
 builder.Services.AddSingleton<HighScoreMeter>();

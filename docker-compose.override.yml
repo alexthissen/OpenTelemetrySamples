@@ -92,7 +92,7 @@ services:
 
   aspire-dashboard:
     container_name: aspire-dashboard-demo
-    image: mcr.microsoft.com/dotnet/aspire-dashboard:9.0
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:9.2
     environment:
       - DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS=true
     ports:

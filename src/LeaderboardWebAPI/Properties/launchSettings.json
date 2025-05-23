@@ -12,7 +12,7 @@
     "IIS Express": {
       "commandName": "IISExpress",
       "launchBrowser": true,
-      "launchUrl": "openapi",
+      "launchUrl": "openapi/v1.json",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -20,7 +20,7 @@
     "LeaderboardWebAPI": {
       "commandName": "Project",
       "launchBrowser": true,
-      "launchUrl": "openapi",
+      "launchUrl": "openapi/v1.json",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
