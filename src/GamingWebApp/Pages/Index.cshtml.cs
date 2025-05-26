@@ -41,7 +41,7 @@ public class IndexModel(IOptionsSnapshot<LeaderboardApiOptions> options,
         {
             logger.LogWarning(ex, "Timeout occurred when retrieving high score list");
             
-            activity?.RecordException(ex);
+            activity?.AddException(ex);
             activity?.SetStatus(ActivityStatusCode.Error);
         }
         catch (Exception ex)

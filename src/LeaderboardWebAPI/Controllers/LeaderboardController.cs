@@ -62,7 +62,7 @@ namespace LeaderboardWebAPI.Controllers
             {
                 logger!.LogError(ex, "Unknown exception occurred while retrieving high score list");
 
-                activity?.RecordException(ex);
+                activity?.AddException(ex);
                 activity?.SetStatus(ActivityStatusCode.Error);
             }
 
