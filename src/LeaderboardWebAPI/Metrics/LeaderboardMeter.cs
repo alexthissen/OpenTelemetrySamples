@@ -11,7 +11,6 @@ namespace LeaderboardWebAPI.Metrics
         {
             highScoreRetrievedCounter =
                 Meter.CreateCounter<int>("high_score.retrieved", "points", "Retrieved high scores");
-            Meter.CreateCounter<int>("exceptionsOccured");
         }
 
         public static string MeterName => "leaderboard.score";

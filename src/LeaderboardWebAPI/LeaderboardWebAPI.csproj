@@ -30,6 +30,7 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1-Preview.1" />
+		<PackageReference Include="Scalar.AspNetCore" Version="2.4.3" />
 		<PackageReference Include="Seq.Extensions.Logging" Version="8.0.0" />
 		
 		<PackageReference Include="Microsoft.Extensions.AmbientMetadata.Application" Version="9.5.0" />

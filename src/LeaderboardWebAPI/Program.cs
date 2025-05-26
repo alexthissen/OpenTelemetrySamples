@@ -5,26 +5,22 @@ using LeaderboardWebAPI.Infrastructure;
 using LeaderboardWebAPI.Metrics;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.AmbientMetadata;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Diagnostics.Enrichment;
 using Microsoft.Net.Http.Headers;
-using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Scalar.AspNetCore;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Microsoft.Extensions.Diagnostics.Metrics;
-using Azure.Monitor.OpenTelemetry.Exporter;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -191,6 +187,7 @@ if (app.Environment.IsDevelopment())
 
     app.UseDeveloperExceptionPage();
     app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 
 app.UseAuthorization();
