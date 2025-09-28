@@ -3,14 +3,18 @@ services:
     container_name: webapi
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:80;http://+:8080
+      - ASPNETCORE_URLS=http://+:80;https://+:443;http://+:8080
       - ASPNETCORE_MANAGEMENTPORT=8080
-      - ConnectionStrings__LeaderboardContext=Server=sql.data;Database=Leaderboard;User Id=sa;Password=Pass@word;Trusted_Connection=False;TrustServerCertificate=true
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/certificate.pfx
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=9b1c92b7-011c-4724-86c3-82a643b1a242
+      - ConnectionStrings__LeaderboardContext=Server=sql.data;Database=Leaderboard;User Id=sa;Password=Pass@word;Trusted_Connection=False;TrustServerCertificate=true
     user: root
     ports:
       - 4972:80
       - 44369:443
+    volumes:
+      - .:/https:ro
 #    depends_on:
 #      - sql.data
     networks:
@@ -22,13 +26,17 @@ services:
     environment:
       - OTEL_DOTNET_AUTO_CONTAINER_RESOURCE_DETECTOR_ENABLED=true
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:80 #;https://+:443
+      - ASPNETCORE_URLS=http://+:80;https://+:443
       - LeaderboardApiOptions__BaseUrl=http://leaderboardwebapi
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/certificate.pfx
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=9b1c92b7-011c-4724-86c3-82a643b1a242
     user: root
     ports:
       - 5618:80
       - 44325:443
+    volumes:
+      - .:/https:ro
     depends_on:
       - leaderboardwebapi
     networks:
