@@ -2,7 +2,7 @@
 
 This repository contains instructions to run the OpenTelemetry sample application.
 
-## ASP.NET Core develeport certificate for HTTPS traffic 
+## ASP.NET Core developer certificate for HTTPS traffic 
 
 When using containers during development, the local developer certificate needs to be mapped into the container running ASP.NET Core. In Visual Studio 2022 and 2026 this is handled by mapping environment variables and volume mounts. However, in Visual Studio Code the container tooling is not available to create the required Docker (Compose) files.
 

@@ -79,6 +79,7 @@ services:
       - backend
 
   dotnet-monitor:
+    container_name: dotnet-monitor
     image: mcr.microsoft.com/dotnet/monitor:7
     ports: 
       - 52323:52323
@@ -102,7 +103,7 @@ services:
       - frontend
 
   aspire-dashboard:
-    container_name: aspire-dashboard-demo
+    container_name: aspire-dashboard
     image: mcr.microsoft.com/dotnet/aspire-dashboard:9.2
     environment:
       - DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS=true

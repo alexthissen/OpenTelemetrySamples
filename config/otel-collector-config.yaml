@@ -24,8 +24,8 @@ exporters:
     maxbatchsize: 100
     maxbatchinterval: 10s
   
-  prometheus:
-    endpoint: 0.0.0.0:8889
+  # prometheus:
+  #   endpoint: 0.0.0.0:8889
   
   otlp/aspire-dashboard:
     endpoint: aspire-dashboard:18889
@@ -56,7 +56,7 @@ service:
       processors: [batch]
     metrics:
       receivers: [otlp]
-      exporters: [prometheus, azuremonitor, otlp/aspire-dashboard]
+      exporters: [azuremonitor, otlp/aspire-dashboard] # prometheus, 
       processors: [batch]
     logs:
       receivers: [otlp]
