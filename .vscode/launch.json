@@ -2,22 +2,6 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "SQL Docker Compose Up",
-            "type": "PowerShell",
-            "request": "launch",
-            "script": "Invoke-Expression",
-            "args": ["'docker-compose -f docker-compose.sqlonly.yml up -d --build'"],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "name": "SQL Docker Compose Down",
-            "type": "PowerShell",
-            "request": "launch",
-            "script": "Invoke-Expression",
-            "args": ["'docker-compose -f docker-compose.sqlonly.yml down'"],
-            "cwd": "${workspaceFolder}"
-        },
-        {
             // Use IntelliSense to find out which attributes exist for C# debugging
             // Use hover for the description of the existing attributes
             // For further information visit https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md

@@ -19,13 +19,13 @@ exporters:
     endpoint: http://seq:5341/ingest/otlp/
   
   azuremonitor:
-    connection_string: InstrumentationKey=
+    connection_string: InstrumentationKey=<your-connection-string>
     spaneventsenabled: true
     maxbatchsize: 100
     maxbatchinterval: 10s
   
-  # prometheus:
-  #   endpoint: 0.0.0.0:8889
+  prometheus:
+    endpoint: 0.0.0.0:8889
   
   otlp/aspire-dashboard:
     endpoint: aspire-dashboard:18889
@@ -56,7 +56,7 @@ service:
       processors: [batch]
     metrics:
       receivers: [otlp]
-      exporters: [azuremonitor, otlp/aspire-dashboard] # prometheus, 
+      exporters: [azuremonitor, otlp/aspire-dashboard, prometheus] # prometheus, 
       processors: [batch]
     logs:
       receivers: [otlp]

@@ -99,31 +99,35 @@ builder.Services.Configure<HealthCheckPublisherOptions>(options =>
     options.Delay = TimeSpan.FromSeconds(60);
 });
 
-// Add configuration provider for Azure Key Vault
-if (!String.IsNullOrEmpty(builder.Configuration["KeyVaultUri"]))
+// Add configuration provider for Azure Key Vault if configured
+IConfigurationSection keyVaultSection = builder.Configuration.GetSection("KeyVault");
+if (keyVaultSection.Exists())
 {
-    Uri keyVaultUri = new Uri(builder.Configuration["KeyVaultUri"]);
-    ClientSecretCredential credential = new(
-        builder.Configuration["KeyVaultTenantID"],
-        builder.Configuration["KeyVaultClientID"],
-        builder.Configuration["KeyVaultClientSecret"]);
-    // For managed identities use:
-    //   new DefaultAzureCredential()
-    var secretClient = new SecretClient(keyVaultUri, credential);
-    builder.Configuration.AddAzureKeyVault(secretClient, new KeyVaultSecretManager());
+	Uri keyVaultUri = new Uri(keyVaultSection["VaultUri"]);
+	ClientSecretCredential credential = new(
+		keyVaultSection["TenantId"],
+		keyVaultSection["ClientId"],
+		keyVaultSection["ClientSecret"]);
 
-    healthChecks?.AddAzureKeyVault(keyVaultUri, credential,
-        options =>
-        {
-            options
-               .AddSecret("ApplicationInsights--InstrumentationKey")
-               .AddKey("RetroKey");
-        }, name: "keyvault"
-    );
+	// For managed identities use:
+	//   new DefaultAzureCredential()
+	var secretClient = new SecretClient(keyVaultUri, credential);
+	builder.Configuration.AddAzureKeyVault(secretClient, new KeyVaultSecretManager());
+
+	healthChecks?.AddAzureKeyVault(keyVaultUri, credential,
+		options =>
+		{
+			options
+			   .AddSecret("ApplicationInsights--InstrumentationKey")
+			   .AddKey("RetroKey");
+		}, name: "keyvault"
+	);
 }
 
 // Database 
-if (builder.Environment.IsDevelopment())
+string connectionString =
+	builder.Configuration.GetConnectionString("LeaderboardContext");
+if (String.IsNullOrEmpty(connectionString))
 {
     builder.Services.AddDbContext<LeaderboardContext>(options =>
     {
@@ -132,18 +136,15 @@ if (builder.Environment.IsDevelopment())
 }
 else
 {
-    builder.Services.AddDbContext<LeaderboardContext>(options =>
-{
-    string connectionString =
-        builder.Configuration.GetConnectionString("LeaderboardContext");
-    options.UseSqlServer(connectionString, sqlOptions =>
-    {
-        sqlOptions.EnableRetryOnFailure(
-            maxRetryCount: 5,
-            maxRetryDelay: TimeSpan.FromSeconds(30),
-            errorNumbersToAdd: null);
-    });
-});
+    builder.Services.AddDbContext<LeaderboardContext>(options => {
+		options.UseSqlServer(connectionString, sqlOptions =>
+		{
+			sqlOptions.EnableRetryOnFailure(
+				maxRetryCount: 5,
+				maxRetryDelay: TimeSpan.FromSeconds(30),
+				errorNumbersToAdd: null);
+		});
+	});
 }
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();

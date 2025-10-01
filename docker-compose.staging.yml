@@ -1,0 +1,130 @@
+services:
+  leaderboardwebapi:
+    container_name: webapi
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Staging
+      - ASPNETCORE_URLS=http://+:80;https://+:443;http://+:8080
+      - ASPNETCORE_MANAGEMENTPORT=8080
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/certificate.pfx
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=9b1c92b7-011c-4724-86c3-82a643b1a242
+      - ConnectionStrings__LeaderboardContext=Server=sql.data;Database=Leaderboard;User Id=sa;Password=Pass@word;Trusted_Connection=False;TrustServerCertificate=true
+    user: root
+    ports:
+      - 4972:80
+      - 44369:443
+    volumes:
+      - .:/https:ro
+#    depends_on:
+#      - sql.data
+    networks:
+      - frontend
+      - backend
+
+  gamingwebapp:
+    container_name: webapp
+    environment:
+      - OTEL_DOTNET_AUTO_CONTAINER_RESOURCE_DETECTOR_ENABLED=true
+      - ASPNETCORE_ENVIRONMENT=Staging
+      - ASPNETCORE_URLS=http://+:80;https://+:443
+      - LeaderboardApiOptions__BaseUrl=http://leaderboardwebapi
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/certificate.pfx
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=9b1c92b7-011c-4724-86c3-82a643b1a242
+    user: root
+    ports:
+      - 5618:80
+      - 44325:443
+    volumes:
+      - .:/https:ro
+    depends_on:
+      - leaderboardwebapi
+    networks:
+      - frontend
+
+  # sql.data:
+  #   container_name: sql
+  #   image: mcr.microsoft.com/mssql/server:2025-latest
+  #   environment:
+  #     - SA_PASSWORD=Pass@word
+  #     - MSSQL_PID=Developer
+  #     - ACCEPT_EULA=Y
+  #   ports:
+  #     - "1433"
+  #   networks:
+  #     backend:
+  #       aliases: 
+  #         - sql.retrogaming.internal
+
+  seq:
+    container_name: seq
+    image: datalust/seq:latest
+    environment: 
+      - ACCEPT_EULA=Y
+      - SEQ_FIRSTRUN_NOAUTHENTICATION=true
+    ports:
+      - "5341:80"
+    networks:
+      - backend
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true 
+    ports:
+      - 16686:16686 
+    networks:
+      - frontend
+      - backend
+
+  dotnet-monitor:
+    container_name: dotnet-monitor
+    image: mcr.microsoft.com/dotnet/monitor:7
+    ports: 
+      - 52323:52323
+    environment:
+      - DOTNETMONITOR_Authentication:MonitorApiKey:Subject=a65223c0-4066-4594-ae46-f3a1fad83a37
+      - DOTNETMONITOR_Authentication:MonitorApiKey:PublicKey=eyJBZGRpdGlvbmFsRGF0YSI6e30sIkNydiI6IlAtMzg0IiwiS2V5T3BzIjpbXSwiS3R5IjoiRUMiLCJYIjoiZDk0SFNXQXdrbmxPZTNBWWJhRTVfVmxJTFd5QVNhbDhvQkV2bHM2YTZucVVvcUVCQ04zZVhUNmtDb216S0syRyIsIlg1YyI6W10sIlkiOiJmb3RySFh6Sml2ZGN2RUVoY24zVlZtVUt4Q1ZrVk4wSnVxaUVmRFQxblhEN3VhTTZMcmRDUEVXRzB4dDBHYW1FIiwiS2V5U2l6ZSI6Mzg0LCJIYXNQcml2YXRlS2V5IjpmYWxzZSwiQ3J5cHRvUHJvdmlkZXJGYWN0b3J5Ijp7IkNyeXB0b1Byb3ZpZGVyQ2FjaGUiOnt9LCJDYWNoZVNpZ25hdHVyZVByb3ZpZGVycyI6dHJ1ZSwiU2lnbmF0dXJlUHJvdmlkZXJPYmplY3RQb29sQ2FjaGVTaXplIjoyNH19
+    networks:
+      - backend
+
+  otel-collector:
+    container_name: otel-collector
+    image: otel/opentelemetry-collector-contrib:latest
+    volumes:
+      - ./config/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    command: [ "--config=/etc/otel-collector-config.yaml" ]
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    networks:
+      - backend
+      - frontend
+
+  aspire-dashboard:
+    container_name: aspire-dashboard
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:9.2
+    environment:
+      - DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS=true
+    ports:
+     - 18888:18888
+    networks:
+      - frontend
+      - backend
+
+  prometheus:
+    container_name: otel.prometheus 
+    image: prom/prometheus:latest
+    volumes:
+      - ./config/prometheus-config.yaml:/etc/prometheus/prometheus.yml
+    ports:
+      - 9090:9090 # Port for User Interface
+    networks:
+      - backend
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
