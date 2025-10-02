@@ -3,6 +3,7 @@ using System.Diagnostics.Metrics;
 using GamingWebApp.Proxy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Diagnostics.ExceptionSummarization;
 using Microsoft.Extensions.Options;
 using OpenTelemetry.Trace;
 using Polly.Timeout;
@@ -10,7 +11,7 @@ using Polly.Timeout;
 namespace GamingWebApp.Pages;
 
 public class IndexModel(IOptionsSnapshot<LeaderboardApiOptions> options,
-    ILeaderboardClient proxy, 
+    ILeaderboardClient proxy, IExceptionSummarizer summarizer,
     ILogger<IndexModel> logger, 
     HighScoreMeter highScoreMeter) : PageModel
 {
@@ -35,7 +36,8 @@ public class IndexModel(IOptionsSnapshot<LeaderboardApiOptions> options,
         }
         catch (HttpRequestException ex)
         {
-            logger.LogInformation(ex, "Http request failed");
+			var summary = summarizer.Summarize(ex);
+            logger.LogInformation(summary.Description);
         }
         catch (TimeoutRejectedException ex)
         {

@@ -8,7 +8,7 @@ services:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
       - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/certificate.pfx
       - ASPNETCORE_Kestrel__Certificates__Default__Password=9b1c92b7-011c-4724-86c3-82a643b1a242
-      - ConnectionStrings__LeaderboardContext=Server=sql.data;Database=Leaderboard;User Id=sa;Password=Pass@word;Trusted_Connection=False;TrustServerCertificate=true
+#      - ConnectionStrings__LeaderboardContext=Server=sql.data;Database=Leaderboard;User Id=sa;Password=Pass@word;Trusted_Connection=False;TrustServerCertificate=true
     user: root
     ports:
       - 4972:80
@@ -98,13 +98,14 @@ services:
     ports:
       - "4317:4317"
       - "4318:4318"
+      - "13133:13133"
     networks:
       - backend
       - frontend
 
   aspire-dashboard:
     container_name: aspire-dashboard
-    image: mcr.microsoft.com/dotnet/aspire-dashboard:9.2
+    image: mcr.microsoft.com/dotnet/nightly/aspire-dashboard
     environment:
       - DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS=true
     ports:

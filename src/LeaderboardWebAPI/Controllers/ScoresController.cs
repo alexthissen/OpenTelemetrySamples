@@ -21,7 +21,7 @@ namespace LeaderboardWebAPI.Controllers
         private readonly ILogger<ScoresController> logger;
         private readonly HighScoreMeter highScoreMeter;
 
-        public ScoresController(LeaderboardContext context, ILogger<ScoresController> logger,
+		public ScoresController(LeaderboardContext context, ILogger<ScoresController> logger,
             HighScoreMeter highScoreMeter)
         {
             this.context = context;
@@ -108,7 +108,7 @@ namespace LeaderboardWebAPI.Controllers
                     new("game", game)
                 }));
 
-                await context.SaveChangesAsync().ConfigureAwait(false);
+				await context.SaveChangesAsync().ConfigureAwait(false);
                 return Ok();
             }
         }

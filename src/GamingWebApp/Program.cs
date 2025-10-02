@@ -5,6 +5,7 @@ using GamingWebApp;
 using GamingWebApp.Proxy;
 using Microsoft.Extensions.AmbientMetadata;
 using Microsoft.Extensions.Diagnostics.Enrichment;
+using Microsoft.Extensions.Diagnostics.ExceptionSummarization;
 using Microsoft.Extensions.Options;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
@@ -63,6 +64,7 @@ var resourceBuilder = ResourceBuilder.CreateDefault()
    .AddContainerDetector();
 
 builder.Host.UseApplicationMetadata("AmbientMetadata:Application");
+builder.Services.AddExceptionSummarizer(builder => builder.AddHttpProvider());
 builder.Services.AddSingleton<HighScoreMeter>();
 builder.Services.AddServiceLogEnricher(options =>
 {

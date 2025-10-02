@@ -165,10 +165,11 @@ builder.Services
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("CorsPolicy",
-        builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
-    );
+	options.AddPolicy("CorsPolicy",
+		builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
+	);
 });
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi("v1", options =>
 {
