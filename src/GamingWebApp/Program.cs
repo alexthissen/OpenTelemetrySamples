@@ -71,6 +71,7 @@ builder.Services.AddServiceLogEnricher(options =>
     options.EnvironmentName = true;
     options.DeploymentRing = true;
 });
+builder.Logging.EnableEnrichment();
 
 builder.Services
    .AddOpenTelemetry()
