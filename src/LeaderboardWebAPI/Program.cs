@@ -64,23 +64,18 @@ builder.Services.AddOpenTelemetry()
         // Exporters
         metrics.AddConsoleExporter();
         metrics.AddOtlpExporter();
-    });
+    })
+    .WithLogging(logging =>
+	{
+        logging.SetResourceBuilder(resourceBuilder);
 
-builder.Logging.AddOpenTelemetry(options =>
-{
-    options.SetResourceBuilder(resourceBuilder);
-
-    // Some important options to improve data quality
-    options.IncludeScopes = true;
-    options.IncludeFormattedMessage = true;
-
-    // Exporters
-    options.AddOtlpExporter(exporter =>
-    {
-        exporter.Endpoint = new Uri("http://seq:5341/ingest/otlp/v1/logs");
-        exporter.Protocol = OtlpExportProtocol.HttpProtobuf;
-    });
-});
+        // Exporters
+        logging.AddOtlpExporter(exporter =>
+        {
+            exporter.Endpoint = new Uri("http://seq:5341/ingest/otlp/v1/logs");
+            exporter.Protocol = OtlpExportProtocol.HttpProtobuf;
+        });
+	});
 
 builder.Services.AddProcessLogEnricher();
 builder.Services.AddServiceLogEnricher(options =>
