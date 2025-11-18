@@ -49,7 +49,7 @@ builder.Services.AddOpenTelemetry()
         tracing.SetResourceBuilder(resourceBuilder);
         tracing.AddAspNetCoreInstrumentation();
         tracing.AddHttpClientInstrumentation();
-        tracing.AddEntityFrameworkCoreInstrumentation(options => { options.SetDbStatementForText = true; });
+        tracing.AddEntityFrameworkCoreInstrumentation();
 
         // Exporters
         tracing.AddConsoleExporter(options => options.Targets = ConsoleExporterOutputTargets.Console);
@@ -64,23 +64,18 @@ builder.Services.AddOpenTelemetry()
         // Exporters
         metrics.AddConsoleExporter();
         metrics.AddOtlpExporter();
-    });
+    })    
+    .WithLogging(logging =>
+	{
+        logging.SetResourceBuilder(resourceBuilder);
 
-builder.Logging.AddOpenTelemetry(options =>
-{
-    options.SetResourceBuilder(resourceBuilder);
-
-    // Some important options to improve data quality
-    options.IncludeScopes = true;
-    options.IncludeFormattedMessage = true;
-
-    // Exporters
-    options.AddOtlpExporter(exporter =>
-    {
-        exporter.Endpoint = new Uri("http://seq:5341/ingest/otlp/v1/logs");
-        exporter.Protocol = OtlpExportProtocol.HttpProtobuf;
-    });
-});
+        // Exporters
+        logging.AddOtlpExporter(exporter =>
+        {
+            exporter.Endpoint = new Uri("http://seq:5341/ingest/otlp/v1/logs");
+            exporter.Protocol = OtlpExportProtocol.HttpProtobuf;
+        });
+	});
 
 builder.Services.AddProcessLogEnricher();
 builder.Services.AddServiceLogEnricher(options =>
@@ -100,26 +95,28 @@ builder.Services.Configure<HealthCheckPublisherOptions>(options =>
 });
 
 // Add configuration provider for Azure Key Vault
-if (!String.IsNullOrEmpty(builder.Configuration["KeyVaultUri"]))
+IConfigurationSection section = builder.Configuration.GetSection("KeyVault");                    
+if (section.Exists() && !String.IsNullOrEmpty(section["VaultUri"]))
 {
-    Uri keyVaultUri = new Uri(builder.Configuration["KeyVaultUri"]);
-    ClientSecretCredential credential = new(
-        builder.Configuration["KeyVaultTenantID"],
-        builder.Configuration["KeyVaultClientID"],
-        builder.Configuration["KeyVaultClientSecret"]);
-    // For managed identities use:
-    //   new DefaultAzureCredential()
-    var secretClient = new SecretClient(keyVaultUri, credential);
-    builder.Configuration.AddAzureKeyVault(secretClient, new KeyVaultSecretManager());
+    var credential =
+        // For managed identities use:
+        // new DefaultAzureCredential();
 
-    healthChecks?.AddAzureKeyVault(keyVaultUri, credential,
-        options =>
+        // Code below doesn't work because of multiple parametrized constructors
+        //section.Get<ClientSecretCredential>(options => { options.BindNonPublicProperties = true; });
+
+        new ClientSecretCredential(
+            section["TenantId"],
+            section["ClientId"],
+            section["ClientSecret"]);
+
+    SecretClient secretClient = new(section.GetValue<Uri>("VaultUri"), credential);
+    builder.Configuration.AddAzureKeyVault(secretClient, 
+        new AzureKeyVaultConfigurationOptions()
         {
-            options
-               .AddSecret("ApplicationInsights--InstrumentationKey")
-               .AddKey("RetroKey");
-        }, name: "keyvault"
-    );
+            Manager = new KeyVaultSecretManager(),
+            ReloadInterval = TimeSpan.FromMinutes(1)
+        });
 }
 
 // Database 
@@ -136,6 +133,8 @@ else
 {
     string connectionString =
         builder.Configuration.GetConnectionString("LeaderboardContext");
+    Debug.WriteLine($"Using SQL Server with connection string: {connectionString}");
+    
     options.UseSqlServer(connectionString, sqlOptions =>
     {
         sqlOptions.EnableRetryOnFailure(

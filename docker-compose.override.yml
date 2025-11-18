@@ -2,16 +2,26 @@ services:
   leaderboardwebapi:
     container_name: webapi
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:80;http://+:8080
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80;http://+:8080;https://+:443
       - ASPNETCORE_MANAGEMENTPORT=8080
-      - ConnectionStrings__LeaderboardContext=Server=sql.data;Database=Leaderboard;User Id=sa;Password=Pass@word;Trusted_Connection=False;TrustServerCertificate=true
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/certificate.pfx
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=abc123
+      # - ConnectionStrings__LeaderboardContext=Server=sql.data;Database=Leaderboard;User Id=sa;Password=Pass@word;Trusted_Connection=False;TrustServerCertificate=true
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - KeyVault__VaultUri=https://....vault.azure.net/
+      - KeyVault__TenantId=...
+      - KeyVault__ClientId=...
+      - KeyVault__ClientSecret=...
     ports:
       - 4972:80
       - 44369:443
-    depends_on:
-      - sql.data
+    user:
+      root
+    volumes:
+      - .:/https:ro
+    # depends_on:
+    #   - sql.data
     networks:
       - frontend
       - backend
@@ -22,35 +32,42 @@ services:
       - OTEL_DOTNET_AUTO_CONTAINER_RESOURCE_DETECTOR_ENABLED=true
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:80;https://+:443
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/certificate.pfx
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=abc123
       - LeaderboardApiOptions__BaseUrl=http://leaderboardwebapi
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
     ports:
       - 5618:80
       - 44325:443
+    user:
+      root
+    volumes:
+      - .:/https:ro
     depends_on:
       - leaderboardwebapi
     networks:
       - frontend
 
-  sql.data:
-    container_name: sql
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    environment:
-      - SA_PASSWORD=Pass@word
-      - MSSQL_PID=Developer
-      - ACCEPT_EULA=Y
-    ports:
-      - "1433"
-    networks:
-      backend:
-        aliases: 
-          - sql.retrogaming.internal
+  # sql.data:
+  #   container_name: sql
+  #   image: mcr.microsoft.com/mssql/server:2022-latest
+  #   environment:
+  #     - SA_PASSWORD=Pass@word
+  #     - MSSQL_PID=Developer
+  #     - ACCEPT_EULA=Y
+  #   ports:
+  #     - "1433"
+  #   networks:
+  #     backend:
+  #       aliases: 
+  #         - sql.retrogaming.internal
 
   seq:
     container_name: seq
     image: datalust/seq:latest
     environment: 
       - ACCEPT_EULA=Y
+      - SEQ_FIRSTRUN_NOAUTHENTICATION=true
     ports:
       - "5341:80"
     networks:

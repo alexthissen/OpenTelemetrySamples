@@ -15,35 +15,35 @@
 	<ItemGroup>
 		<PackageReference Include="AspNetCore.HealthChecks.AzureKeyVault" Version="9.0.0" />
 		<PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.4.0" />
-		<PackageReference Include="Azure.Identity" Version="1.14.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="10.0.0-preview.4.25258.110" />
-		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0-preview.4.25258.110" />
-		<PackageReference Include="Microsoft.Build.Tasks.Core" Version="17.14.8" />
-		<PackageReference Include="Microsoft.Diagnostics.NETCore.Client" Version="0.2.621003" />
-		<PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.0-preview.4.25258.110" />
-		<PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.0-preview.4.25258.110" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0-preview.4.25258.110" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.0-preview.4.25258.110" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.0-preview.4.25258.110" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.0-preview.4.25258.110">
+		<PackageReference Include="Azure.Identity" Version="1.17.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="10.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+		<PackageReference Include="Microsoft.Build.Tasks.Core" Version="18.0.2" />
+		<PackageReference Include="Microsoft.Diagnostics.NETCore.Client" Version="0.2.652701" />
+		<PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.0">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1-Preview.1" />
-		<PackageReference Include="Scalar.AspNetCore" Version="2.4.3" />
-		<PackageReference Include="Seq.Extensions.Logging" Version="8.0.0" />
+		<PackageReference Include="Scalar.AspNetCore" Version="2.10.3" />
+		<PackageReference Include="Seq.Extensions.Logging" Version="9.0.0" />
 		
-		<PackageReference Include="Microsoft.Extensions.AmbientMetadata.Application" Version="9.5.0" />
-		<PackageReference Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.2.0" />
-		<PackageReference Include="Microsoft.Extensions.Telemetry" Version="9.5.0" />
+		<PackageReference Include="Microsoft.Extensions.AmbientMetadata.Application" Version="10.0.0" />
+		<PackageReference Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.4.0" />
+		<PackageReference Include="Microsoft.Extensions.Telemetry" Version="10.0.0" />
 		
-    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.12.0" />
-		<PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.12.0" />
-		<PackageReference Include="OpenTelemetry.Exporter.Zipkin" Version="1.12.0" />
-		<PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.12.0" />
-		<PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.12.0" />
-		<PackageReference Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.12.0-beta.1" />
-		<PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.12.0" />
+		<PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.14.0" />
+		<PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.14.0" />
+		<PackageReference Include="OpenTelemetry.Exporter.Zipkin" Version="1.14.0" />
+		<PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.14.0" />
+		<PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.14.0" />
+		<PackageReference Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.14.0-beta.2" />
+		<PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.14.0" />
 	</ItemGroup>
 	
 	<ItemGroup>
